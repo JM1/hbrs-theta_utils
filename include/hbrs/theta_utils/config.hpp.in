@@ -1,0 +1,41 @@
+/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#ifndef HBRS_THETA_UTILS_CONFIG_HPP
+#define HBRS_THETA_UTILS_CONFIG_HPP
+
+#define HBRS_THETA_UTILS_CONFIG_VERSION(version, revision, patch) \
+    (((version) << 24) + ((revision) << 16) + (patch))
+
+#define HBRS_THETA_UTILS_VERSION_MAJOR @hbrs-theta_utils_VERSION_MAJOR@
+#define HBRS_THETA_UTILS_VERSION_MINOR @hbrs-theta_utils_VERSION_MINOR@
+#define HBRS_THETA_UTILS_VERSION_PATCH @hbrs-theta_utils_VERSION_PATCH@
+#define HBRS_THETA_UTILS_VERSION_STRING "@hbrs-theta_utils_VERSION@"
+
+#define HBRS_THETA_UTILS_VERSION                            \
+    HBRS_THETA_UTILS_CONFIG_VERSION(HBRS_THETA_UTILS_VERSION_MAJOR, \
+                            HBRS_THETA_UTILS_VERSION_MINOR, \
+                            HBRS_THETA_UTILS_VERSION_PATCH) \
+
+#include <hbrs/theta_utils/export.hpp>
+#define HBRS_THETA_UTILS_API HBRS_THETA_UTILS_EXPORT
+
+#define HBRS_THETA_UTILS_NAMESPACE_BEGIN namespace hbrs { namespace theta_utils {
+#define HBRS_THETA_UTILS_NAMESPACE_END   /* namespace theta_utils */ } /* namespace hbrs */ }
+
+#endif // !HBRS_THETA_UTILS_CONFIG_HPP
