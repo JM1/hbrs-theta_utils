@@ -17,6 +17,8 @@
 #include <hbrs/theta_utils/dt/theta_field.hpp>
 #include <hbrs/theta_utils/dt/nc_exception.hpp>
 #include <hbrs/theta_utils/dt/exception.hpp>
+#include <hbrs/mpl/detail/mpi.hpp>
+#include <hbrs/mpl/dt/exception.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
@@ -33,61 +35,7 @@
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace ba = boost::algorithm;
-
-theta_field::theta_field(
-	std::vector<double> density,
-	std::vector<double> x_velocity,
-	std::vector<double> x_velocity_old,
-	std::vector<double> y_velocity,
-	std::vector<double> y_velocity_old,
-	std::vector<double> z_velocity,
-	std::vector<double> z_velocity_old,
-	std::vector<double> pressure,
-	std::vector<double> pressure_old,
-	std::vector<double> residual
-) : density_{density},
-	x_velocity_{x_velocity},
-	x_velocity_old_{x_velocity_old},
-	y_velocity_{y_velocity},
-	y_velocity_old_{y_velocity_old},
-	z_velocity_{z_velocity},
-	z_velocity_old_{z_velocity_old},
-	pressure_{pressure},
-	pressure_old_{pressure_old},
-	residual_{residual}
-	{}
-
-theta_field::theta_field(nc_cntr cntr) {
-#define __get(__name)                                                                                                  \
-	{                                                                                                                  \
-		auto opt = cntr.variable(#__name);                                                                             \
-		if (opt) {                                                                                                     \
-			__name ## _ = boost::get< std::vector<double> >( opt->data() );                                            \
-		}                                                                                                              \
-	}
-	
-	__get(density)
-	__get(x_velocity)
-	__get(x_velocity_old)
-	__get(y_velocity)
-	__get(y_velocity_old)
-	__get(z_velocity)
-	__get(z_velocity_old)
-	__get(pressure)
-	__get(pressure_old)
-	__get(residual)
-}
-
-HBRS_THETA_UTILS_DEFINE_ATTR(density, std::vector<double>, theta_field)
-HBRS_THETA_UTILS_DEFINE_ATTR(x_velocity, std::vector<double>, theta_field)
-HBRS_THETA_UTILS_DEFINE_ATTR(x_velocity_old, std::vector<double>, theta_field)
-HBRS_THETA_UTILS_DEFINE_ATTR(y_velocity, std::vector<double>, theta_field)
-HBRS_THETA_UTILS_DEFINE_ATTR(y_velocity_old, std::vector<double>, theta_field)
-HBRS_THETA_UTILS_DEFINE_ATTR(z_velocity, std::vector<double>, theta_field)
-HBRS_THETA_UTILS_DEFINE_ATTR(z_velocity_old, std::vector<double>, theta_field)
-HBRS_THETA_UTILS_DEFINE_ATTR(pressure, std::vector<double>, theta_field)
-HBRS_THETA_UTILS_DEFINE_ATTR(pressure_old, std::vector<double>, theta_field)
-HBRS_THETA_UTILS_DEFINE_ATTR(residual, std::vector<double>, theta_field)
+namespace mpi = hbrs::mpl::detail::mpi;
 
 theta_field_path::timestamp::timestamp(std::array<int, 2> significand, int exponent)
 : significand_{significand}, exponent_{exponent} {}
@@ -107,11 +55,16 @@ theta_field_path::timestamp::string() const {
 HBRS_THETA_UTILS_DEFINE_ATTR(significand, theta_field_path::timestamp::significand_t, theta_field_path::timestamp)
 HBRS_THETA_UTILS_DEFINE_ATTR(exponent, int, theta_field_path::timestamp)
 
-theta_field_path::theta_field_path(fs::path folder, std::string prefix, struct timestamp timestamp, int step, boost::optional<int> domain_num)
+theta_field_path::theta_field_path(
+	fs::path folder,
+	std::string prefix,
+	struct timestamp timestamp,
+	int step,
+	boost::optional<int> domain_num)
 : folder_{folder}, prefix_{prefix}, timestamp_{timestamp}, step_{step}, domain_num_{domain_num} {}
 
 fs::path
-theta_field_path::filename() {
+theta_field_path::filename() const {
 	// filename example: karman.pval.t5_000e-02.100.domain_1
 	std::stringstream fn;
 	fn  << prefix_
@@ -119,14 +72,14 @@ theta_field_path::filename() {
 		<< (boost::format("t%d_%03de%+03d") % timestamp_.significand()[0] % timestamp_.significand()[1] % timestamp_.exponent())
 		<< "." << step_;
 	if (domain_num_) {
-		fn << "domain_" << *domain_num_;
+		fn << ".domain_" << *domain_num_;
 	}
 	
 	return { fn.str() };
 }
 
 fs::path
-theta_field_path::full_path() {
+theta_field_path::full_path() const {
 	return folder_ / filename();
 }
 
@@ -136,20 +89,93 @@ HBRS_THETA_UTILS_DEFINE_ATTR(timestamp, struct theta_field_path::timestamp, thet
 HBRS_THETA_UTILS_DEFINE_ATTR(step, int, theta_field_path)
 HBRS_THETA_UTILS_DEFINE_ATTR(domain_num, boost::optional<int>, theta_field_path)
 
+theta_field::theta_field(
+	std::vector<double> density,
+	std::vector<double> x_velocity,
+	std::vector<double> y_velocity,
+	std::vector<double> z_velocity,
+	std::vector<double> pressure,
+	std::vector<double> residual,
+	std::vector<int> global_id
+) : density_{density},
+	x_velocity_{x_velocity},
+	y_velocity_{y_velocity},
+	z_velocity_{z_velocity},
+	pressure_{pressure},
+	residual_{residual},
+	global_id_{global_id}
+	{}
+
+namespace {
+bool
+operator==(std::vector<nc_dimension> const& dims, std::vector<std::string> const& dim_names) {
+	if (dims.size() != dim_names.size()) {
+		return false;
+	}
+	
+	for(std::size_t i = 0; i < dims.size(); ++i) {
+		if (dims[i].name() != dim_names[i]) {
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+bool
+operator!=(std::vector<nc_dimension> const& dims, std::vector<std::string> const& dim_names) {
+	return !(dims == dim_names);
+}
+
+/* unnamed namespace */ }
+
+theta_field::theta_field(nc_cntr cntr) {
+	#define __get(__name, __type)                                                                                      \
+		{                                                                                                              \
+			auto opt = cntr.variable(#__name);                                                                         \
+			if (opt) {                                                                                                 \
+				if (opt->dimensions() != std::vector<std::string>{"no_of_points"}) {                                   \
+					BOOST_THROW_EXCEPTION(unsupported_format_exception{});                                             \
+				}                                                                                                      \
+				__name ## _ = boost::get< std::vector<__type> >( opt->data() );                                        \
+			}                                                                                                          \
+		}
+	
+	__get(density, double)
+	__get(x_velocity, double)
+	__get(y_velocity, double)
+	__get(z_velocity, double)
+	__get(pressure, double)
+	__get(residual, double)
+	__get(global_id, int)
+	
+	#undef __get
+}
+
+HBRS_THETA_UTILS_DEFINE_ATTR(density, std::vector<double>, theta_field)
+HBRS_THETA_UTILS_DEFINE_ATTR(x_velocity, std::vector<double>, theta_field)
+HBRS_THETA_UTILS_DEFINE_ATTR(y_velocity, std::vector<double>, theta_field)
+HBRS_THETA_UTILS_DEFINE_ATTR(z_velocity, std::vector<double>, theta_field)
+HBRS_THETA_UTILS_DEFINE_ATTR(pressure, std::vector<double>, theta_field)
+HBRS_THETA_UTILS_DEFINE_ATTR(residual, std::vector<double>, theta_field)
+HBRS_THETA_UTILS_DEFINE_ATTR(global_id, std::vector<int>, theta_field)
+
 theta_field
 read_theta_field(
 	std::string const& file_path,
 	std::vector<std::string> const& includes,
 	std::vector<std::string> const& excludes
 ) {
-	if (includes.empty() && excludes.empty()) {	
-		return { read_nc_cntr(file_path, { "density", ".*_velocity", "pressure", "residual" ".*_old" }) };
+	if (includes.empty() && excludes.empty()) {
+		// only include currently supported:
+		return { read_nc_cntr(file_path, { "density", ".*_velocity", "pressure", "residual", /*".*_old",*/ "global_id" }) };
 	} else {
 		return { read_nc_cntr(file_path, includes, excludes) };
 	}
 }
 
-static
+namespace {
+
 boost::optional<theta_field_path>
 parse_theta_field_path(fs::path file_path, std::string const& input_prefix) {
 	namespace qi = boost::spirit::qi;
@@ -181,7 +207,7 @@ parse_theta_field_path(fs::path file_path, std::string const& input_prefix) {
 			>> qi::char_('.') 
 			>> qi::int_[phoenix::ref(step) = qi::_1]
 			>> qi::repeat(0, 1)[
-				qi::lit("domain_") >> qi::int_[phoenix::push_back(phoenix::ref(domain_num), qi::_1)]
+				qi::lit(".domain_") >> qi::int_[phoenix::push_back(phoenix::ref(domain_num), qi::_1)]
 			]
 		]
 	);
@@ -200,19 +226,19 @@ parse_theta_field_path(fs::path file_path, std::string const& input_prefix) {
 	};
 }
 
-static
-std::vector<theta_field_path> 
-find_theta_field_files(
-	std::string const& folder_path,
-	std::string const& input_prefix
+/* unnamed namespace */ }
+
+std::vector<theta_field_path>
+find_theta_fields(
+	fs::path const& dir,
+	std::string const& prefix
 ) {
-	fs::path dir{folder_path};
 	std::vector<fs::path> all_files;
 	std::copy(fs::directory_iterator(dir), fs::directory_iterator(), std::back_inserter(all_files));
 	
 	std::vector<theta_field_path> field_files;
 	for(auto && path : all_files) {
-		auto field_path = parse_theta_field_path(path, input_prefix);
+		auto field_path = parse_theta_field_path(path, prefix);
 		if (!field_path) {
 			continue;
 		}
@@ -233,102 +259,128 @@ find_theta_field_files(
 	return field_files;
 }
 
-
-static
-void
-sanity_check(std::vector<theta_field_path> paths, std::string const& folder_path, std::string const& prefix) {
-	if (paths.empty()) { 
-		BOOST_THROW_EXCEPTION((
-			fs::filesystem_error{
-				(boost::format("no theta field files (*.pval.*) with prefix %s found in folder %s") % prefix % folder_path).str(),
-				boost::system::errc::make_error_code(boost::system::errc::no_such_file_or_directory)
-			}
-		));
-	}
+std::vector<theta_field_path>
+filter_theta_fields_by_domain_num(
+	std::vector<theta_field_path> const& fields,
+	boost::optional<int> const& domain_num
+) {
+	BOOST_ASSERT(domain_num ? *domain_num == mpi::rank() : true);
 	
-	boost::optional<int> domain_num = paths.front().domain_num();
-	for (auto && path : paths) {
-		if (path.domain_num() != domain_num) {
-			BOOST_THROW_EXCEPTION((
-				ambiguous_domain_num_exception{}
-				<< errinfo_ambiguous_domain_num{{paths.front().full_path(), path.full_path()}}
-			));
-		}
-	}
-	
-	int init = false;
-	
-	int ec = MPI_Initialized(&init);
-	if (ec != MPI_SUCCESS) { 
-		BOOST_THROW_EXCEPTION(mpi_exception{} << errinfo_mpi_error_info{mpi_error_info{ec}});
-	}
-	
-	if (!init && !domain_num) {
-		return;
-	}
-	
-	if (!init && domain_num) {
-		BOOST_THROW_EXCEPTION(mpi_not_initialized_exception{});
-	}
-	
-	int size = 0;
-	ec = MPI_Comm_size(MPI_COMM_WORLD, &size);
-	if (ec != MPI_SUCCESS) { 
-		BOOST_THROW_EXCEPTION(mpi_exception{} << errinfo_mpi_error_info{mpi_error_info{ec}});
-	}
-	
-	int rank = -1;
-	ec = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	if (ec != MPI_SUCCESS) { 
-		BOOST_THROW_EXCEPTION(mpi_exception{} << errinfo_mpi_error_info{mpi_error_info{ec}});
-	}
-	
-	if (size == 1 && !domain_num) {
-		return;
-	}
-	
+	std::vector<theta_field_path> kept;
 	if (!domain_num) {
-		BOOST_THROW_EXCEPTION((
-			domain_num_mismatch_exception{} 
-			<< errinfo_domain_num_mismatch{domain_num_mismatch_error_info{paths.front().full_path(), rank, domain_num}}
-		));
+		BOOST_ASSERT(mpi::size() == 1);
+		// keep files without domain suffix
+		std::copy_if(
+			fields.begin(),
+			fields.end(),
+			std::back_inserter(kept),
+			[](auto path){return !path.domain_num();}
+		);
+		
+		if (!kept.empty()) {
+			boost::optional<int> first_num = kept.front().domain_num();
+			for (auto && path : kept) {
+				if (path.domain_num() != first_num) {
+					BOOST_THROW_EXCEPTION((
+						ambiguous_domain_num_exception{}
+						<< errinfo_ambiguous_domain_num{{kept.front().full_path(), path.full_path()}}
+					));
+				}
+			}
+		}
+	} else {
+		// keep files with a domain suffix
+		std::copy_if(
+			fields.begin(),
+			fields.end(),
+			std::back_inserter(kept),
+			[&domain_num](auto path){return path.domain_num() == domain_num;}
+		);
 	}
-	
-	if (*domain_num == rank) {
-		return;
-	}
-	
-	BOOST_THROW_EXCEPTION((
-		domain_num_mismatch_exception{} 
-		<< errinfo_domain_num_mismatch{domain_num_mismatch_error_info{paths.front().full_path(), rank, domain_num}}
-	));
+	return kept;
 }
 
-std::vector<
-	std::tuple<theta_field, theta_field_path>
->
+std::vector<theta_field>
 read_theta_fields(
-	std::string const& folder_path,
-	std::string const& input_prefix,
+	std::vector<theta_field_path> const& paths,
 	std::vector<std::string> const& includes,
 	std::vector<std::string> const& excludes
 ) {
-	std::vector<theta_field_path> field_files = find_theta_field_files(folder_path, input_prefix);
-	sanity_check(field_files, folder_path, input_prefix);
+	std::vector<theta_field> fields;
+	fields.reserve(paths.size());
 	
-	std::vector<
-		std::tuple<theta_field, theta_field_path>
-	> zipped;
-	zipped.reserve(field_files.size());
-	
-	for(auto && file : field_files) {
-		zipped.push_back({
-			read_theta_field(file.full_path().string(), includes, excludes),
-			file
-		});
+	for(auto && path : paths) {
+		fields.push_back(
+			read_theta_field(path.full_path().string(), includes, excludes)
+		);
 	}
 	
-	return zipped;
+	return fields;
+}
+
+namespace {
+
+nc_cntr
+gen_nc_cntr(theta_field field) {
+	std::vector<nc_dimension> dims;
+	std::vector<nc_variable> vars;
+	
+	#define __add(__name)                                                                                              \
+		{                                                                                                              \
+			auto vec = std::move(field.__name());                                                                      \
+			if (!vec.empty()) {                                                                                        \
+				auto dim_it = std::find_if(                                                                            \
+					dims.begin(),                                                                                      \
+					dims.end(),                                                                                        \
+					[](auto const& dim) { return dim.name() == "no_of_points"; }                                       \
+				);                                                                                                     \
+				if (dim_it != dims.end()) {                                                                            \
+					if (vec.size() != dim_it->length()) {                                                              \
+						BOOST_THROW_EXCEPTION(unsupported_format_exception{});                                         \
+						/* TODO: Add more exception info, e.g. expected and received sizes */                          \
+					}                                                                                                  \
+				} else {                                                                                               \
+					dims.push_back({"no_of_points", vec.size()});                                                      \
+					dim_it = --dims.end();                                                                             \
+				}                                                                                                      \
+				vars.push_back({#__name, {*dim_it}, {std::move(vec)}});                                                \
+			}                                                                                                          \
+		}
+	
+	__add(density)
+	__add(x_velocity)
+	__add(y_velocity)
+	__add(z_velocity)
+	__add(pressure)
+	__add(residual)
+	__add(global_id)
+	
+	#undef __add
+	
+	return {dims, vars};
+}
+
+/* unnamed namespace */ }
+
+void
+write_theta_field(
+	theta_field field,
+	std::string const& file_path,
+	bool overwrite
+) {
+	write_nc_cntr(gen_nc_cntr(std::move(field)), file_path, overwrite);
+}
+
+void
+write_theta_fields(
+	std::vector< std::tuple<theta_field, theta_field_path> > fields,
+	bool overwrite
+) {
+	for(auto & pack : fields) {
+		auto & [field, path] = pack;
+		auto file_path = (path.folder() / path.filename()).string();
+		write_theta_field(std::move(field), file_path, overwrite);
+	}
 }
 
 HBRS_THETA_UTILS_NAMESPACE_END

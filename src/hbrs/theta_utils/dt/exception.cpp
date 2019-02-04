@@ -15,7 +15,7 @@
  */
 
 #include <hbrs/theta_utils/dt/exception.hpp>
-#include <mpi.h>
+#include <sstream>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
@@ -26,26 +26,17 @@ HBRS_THETA_UTILS_DEFINE_ATTR(path, fs::path, domain_num_mismatch_error_info)
 HBRS_THETA_UTILS_DEFINE_ATTR(expected, int, domain_num_mismatch_error_info)
 HBRS_THETA_UTILS_DEFINE_ATTR(got, boost::optional<int>, domain_num_mismatch_error_info)
 
-mpi_error_info::mpi_error_info(int code) : code_{code}, class__{0}, string_{} {
-	char c_str[MPI_MAX_ERROR_STRING];
-    int c_str_len;
-    
-    int ec = MPI_Error_string(code, c_str, &c_str_len);
-	if(ec == MPI_SUCCESS) {
-		string_ = std::string(c_str, c_str_len);
-	}
+std::string
+to_string(errinfo_ambiguous_domain_num e) {
+	fs::path const& first = std::get<0>(e.value());
+	fs::path const& second = std::get<1>(e.value());
 	
-	int class_;
-	ec = MPI_Error_class(code, &class_);
-	if (ec == MPI_SUCCESS) {
-		class__ = class_;
-	}
+	std::stringstream str;
+	str 
+		<< '[' << boost::error_info_name(e) << "] = "
+		<< "[ first: " << first.string() << ", second: " << second.string() << "]"
+		<< '\n';
+	return str.str();
 }
-mpi_error_info::mpi_error_info(int code, int class_, std::string string) 
-: code_{code}, class__{class_}, string_{string} {}
-
-HBRS_THETA_UTILS_DEFINE_ATTR(code, int, mpi_error_info)
-HBRS_THETA_UTILS_DEFINE_ATTR(class_, int, mpi_error_info)
-HBRS_THETA_UTILS_DEFINE_ATTR(string, std::string, mpi_error_info)
 
 HBRS_THETA_UTILS_NAMESPACE_END

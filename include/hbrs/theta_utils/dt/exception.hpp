@@ -25,18 +25,18 @@
 #include <hbrs/theta_utils/preprocessor/core.hpp>
 #include <boost/hana/core.hpp>
 #include <boost/optional.hpp>
-#include <string>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace mpl = hbrs::mpl;
 
-struct mpi_exception : virtual mpl::exception {};
 struct ambiguous_domain_num_exception : virtual mpl::exception {};
 struct domain_num_mismatch_exception : virtual mpl::exception {};
 struct mpi_not_initialized_exception : virtual mpl::exception {};
 struct unsupported_format_exception : virtual mpl::exception {};
 struct ambiguous_grid_exception : virtual mpl::exception {};
 struct invalid_number_range_spec_exception : virtual mpl::exception {};
+struct invalid_grid_exception : virtual mpl::exception {};
+struct vtk_exception : virtual mpl::exception {};
 
 struct domain_num_mismatch_error_info {
 	domain_num_mismatch_error_info(fs::path path, int expected, boost::optional<int> got);
@@ -44,15 +44,6 @@ struct domain_num_mismatch_error_info {
 	HBRS_THETA_UTILS_DECLARE_ATTR(path, fs::path)
 	HBRS_THETA_UTILS_DECLARE_ATTR(expected, int)
 	HBRS_THETA_UTILS_DECLARE_ATTR(got, boost::optional<int>)
-};
-
-struct mpi_error_info {
-	mpi_error_info(int code);
-	mpi_error_info(int code, int class_, std::string string);
-	
-	HBRS_THETA_UTILS_DECLARE_ATTR(code, int)
-	HBRS_THETA_UTILS_DECLARE_ATTR(class_, int)
-	HBRS_THETA_UTILS_DECLARE_ATTR(string, std::string)
 };
 
 HBRS_THETA_UTILS_NAMESPACE_END

@@ -1,4 +1,4 @@
-/* Copyright (c) 2016 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,26 +16,10 @@
 
 #pragma once
 
-#ifndef HBRS_THETA_UTILS_FWD_DT_NUMBER_SEQUENCE_HPP
-#define HBRS_THETA_UTILS_FWD_DT_NUMBER_SEQUENCE_HPP
+#ifndef HBRS_THETA_UTILS_FN_EXECUTE_HPP
+#define HBRS_THETA_UTILS_FN_EXECUTE_HPP
 
-#include <hbrs/theta_utils/config.hpp>
-#include <vector>
+#include <hbrs/theta_utils/fwd/fn/execute.hpp>
+#include <hbrs/theta_utils/dt/command.hpp>
 
-HBRS_THETA_UTILS_NAMESPACE_BEGIN
-namespace hana = boost::hana;
-
-template <typename Iterator>
-struct number_sequence;
-
-template <typename Iterator>
-bool
-parse_number_sequence(
-	Iterator const& first,
-	Iterator const& last,
-	std::vector<unsigned long> & v
-);
-
-HBRS_THETA_UTILS_NAMESPACE_END
-
-#endif // !HBRS_THETA_UTILS_FWD_DT_NUMBER_SEQUENCE_HPP
+#endif // !HBRS_THETA_UTILS_FN_EXECUTE_HPP

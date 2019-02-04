@@ -23,40 +23,44 @@
 #include <hbrs/theta_utils/dt/theta_grid.hpp>
 #include <hbrs/theta_utils/dt/theta_field.hpp>
 #include <boost/filesystem.hpp>
+
+#include <vtkSmartPointer.h>
+#include <vtkUnstructuredGrid.h>
+
 #include <ostream>
+#include <vector>
+#include <string>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace fs = boost::filesystem;
 
 enum class vtk_file_format { legacy_ascii, xml_binary };
 
-void
-write_vtk_legacy_ascii(theta_grid const& grid, theta_field const& field, std::ostream & out);
+struct vtk_path;
+
+vtkSmartPointer<vtkUnstructuredGrid>
+make_vtk_unstructured_grid(theta_grid const& grid, theta_field const& field);
 
 void
-write_vtk_legacy_ascii(theta_grid const& grid, theta_field const& field, std::string const& out);
+write_vtk_legacy_ascii(vtkSmartPointer<vtkUnstructuredGrid> grid, char const * file_path);
 
 void
-write_vtk_xml_binary(theta_grid const& grid, theta_field const& field, std::string const& out);
+write_vtk_xml_binary(vtkSmartPointer<vtkUnstructuredGrid> grid, char const * file_path);
 
 void
-write_vtk(theta_grid const& grid, theta_field const& field, std::string const& out, vtk_file_format frmt);
+write_vtk_xml_binary_parallel(vtkSmartPointer<vtkUnstructuredGrid> grid, char const * file_path);
 
 void
-write_vtk(
-	theta_grid const& grid, 
-	std::vector<std::tuple<theta_field, fs::path>> const& field_series,
-	vtk_file_format frmt
-);
-
-/* ParaView Data (PVD) File Format supports only XML-based VTK file format, but NOT legacy *.vtk file format files.
- * Ref.: https://www.paraview.org/Wiki/ParaView/Data_formats#PVD_File_Format
- */
-void
-write_pvd(std::vector<fs::path> const& series, fs::path filename);
-
-std::string
-vtk_file_extension(vtk_file_format const& frmt);
+convert_to_vtk(
+	theta_grid_path const& grid_path,
+	std::vector<theta_field_path> const& field_paths,
+	fs::path const& folder,
+	std::string const& prefix,
+	std::vector<std::string> const& includes,
+	std::vector<std::string> const& excludes,
+	bool simple_numbering,
+	vtk_file_format format,
+	bool overwrite);
 
 HBRS_THETA_UTILS_NAMESPACE_END
 

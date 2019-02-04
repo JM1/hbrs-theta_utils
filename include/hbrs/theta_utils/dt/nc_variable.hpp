@@ -76,12 +76,10 @@ struct tag_of< hbrs::theta_utils::nc_variable > {
 
 template <>
 struct make_impl<hbrs::theta_utils::nc_variable_tag> {
-	
 	static hbrs::theta_utils::nc_variable
 	apply(std::string name, std::vector<hbrs::theta_utils::nc_dimension> dims, hbrs::theta_utils::nc_variable::array data) {
 		return {name, dims, data};
 	}
-	
 };
 
 /* namespace hana */ } /* namespace boost */ }

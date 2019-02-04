@@ -19,6 +19,8 @@
 #ifndef HBRS_THETA_UTILS_CONFIG_HPP
 #define HBRS_THETA_UTILS_CONFIG_HPP
 
+#define HBRS_THETA_UTILS_COPYRIGHT "Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>"
+
 #define HBRS_THETA_UTILS_CONFIG_VERSION(version, revision, patch) \
     (((version) << 24) + ((revision) << 16) + (patch))
 

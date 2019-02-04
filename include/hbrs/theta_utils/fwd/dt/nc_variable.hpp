@@ -1,4 +1,4 @@
-/* Copyright (c) 2016 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,9 +27,7 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
 struct nc_variable;
-
 struct nc_variable_tag {};
-
 constexpr auto make_nc_variable = hana::make<nc_variable_tag>;
 constexpr auto to_nc_variable = hana::to<nc_variable_tag>;
 

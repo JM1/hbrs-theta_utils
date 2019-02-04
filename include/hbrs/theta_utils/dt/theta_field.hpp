@@ -66,10 +66,10 @@ struct theta_field_path {
 	operator=(theta_field_path &&) = default;
 	
 	fs::path
-	filename();
+	filename() const;
 	
 	fs::path
-	full_path();
+	full_path() const;
 	
 	HBRS_THETA_UTILS_DECLARE_ATTR(folder, fs::path)
 	HBRS_THETA_UTILS_DECLARE_ATTR(prefix, std::string)
@@ -83,14 +83,12 @@ public:
 	theta_field(
 		std::vector<double> density,
 		std::vector<double> x_velocity,
-		std::vector<double> x_velocity_old,
 		std::vector<double> y_velocity,
-		std::vector<double> y_velocity_old,
 		std::vector<double> z_velocity,
-		std::vector<double> z_velocity_old,
 		std::vector<double> pressure,
-		std::vector<double> pressure_old,
-		std::vector<double> residual);
+		std::vector<double> residual,
+		std::vector<int> global_id
+	);
 	
 	theta_field(nc_cntr cntr);
 	
@@ -104,14 +102,11 @@ public:
 	
 	HBRS_THETA_UTILS_DECLARE_ATTR(density, std::vector<double>)
 	HBRS_THETA_UTILS_DECLARE_ATTR(x_velocity, std::vector<double>)
-	HBRS_THETA_UTILS_DECLARE_ATTR(x_velocity_old, std::vector<double>)
 	HBRS_THETA_UTILS_DECLARE_ATTR(y_velocity, std::vector<double>)
-	HBRS_THETA_UTILS_DECLARE_ATTR(y_velocity_old, std::vector<double>)
 	HBRS_THETA_UTILS_DECLARE_ATTR(z_velocity, std::vector<double>)
-	HBRS_THETA_UTILS_DECLARE_ATTR(z_velocity_old, std::vector<double>)
 	HBRS_THETA_UTILS_DECLARE_ATTR(pressure, std::vector<double>)
-	HBRS_THETA_UTILS_DECLARE_ATTR(pressure_old, std::vector<double>)
 	HBRS_THETA_UTILS_DECLARE_ATTR(residual, std::vector<double>)
+	HBRS_THETA_UTILS_DECLARE_ATTR(global_id, std::vector<int>)
 };
 
 HBRS_THETA_UTILS_NAMESPACE_END

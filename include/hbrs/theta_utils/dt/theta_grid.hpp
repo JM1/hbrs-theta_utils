@@ -32,6 +32,26 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
+struct theta_grid_path {
+	theta_grid_path(fs::path folder, std::string prefix);
+	theta_grid_path(theta_grid_path const&) = default;
+	theta_grid_path(theta_grid_path &&) = default;
+	
+	theta_grid_path&
+	operator=(theta_grid_path const&) = default;
+	theta_grid_path&
+	operator=(theta_grid_path &&) = default;
+	
+	fs::path
+	filename() const;
+	
+	fs::path
+	full_path() const;
+	
+	HBRS_THETA_UTILS_DECLARE_ATTR(folder, fs::path)
+	HBRS_THETA_UTILS_DECLARE_ATTR(prefix, std::string)
+};
+
 struct theta_grid {
 public:
 	typedef std::array<int,4> tetraeder;
@@ -40,6 +60,9 @@ public:
 	typedef std::array<int,5> pyramid;
 	typedef std::array<int,3> surfacetriangle;
 	typedef std::array<int,4> surfacequadrilateral;
+	struct point {
+		double x,y,z;
+	};
 	
 	theta_grid(
 		boost::optional<int> points_per_tetraeder,
@@ -57,9 +80,7 @@ public:
 		std::vector<surfacequadrilateral> points_of_surfacequadrilaterals,
 		std::vector<int> boundarymarker_of_surfaces,
 		
-		std::vector<double> points_xc,
-		std::vector<double> points_yc,
-		std::vector<double> points_zc
+		std::vector<point> points
 	);
 	
 	theta_grid(nc_cntr cntr);
@@ -98,10 +119,7 @@ public:
 	HBRS_THETA_UTILS_DECLARE_ATTR(points_of_surfacetriangles, std::vector<surfacetriangle>)
 	HBRS_THETA_UTILS_DECLARE_ATTR(points_of_surfacequadrilaterals, std::vector<surfacequadrilateral>)
 	HBRS_THETA_UTILS_DECLARE_ATTR(boundarymarker_of_surfaces, std::vector<int>)
-	HBRS_THETA_UTILS_DECLARE_ATTR(points_xc, std::vector<double>)
-	HBRS_THETA_UTILS_DECLARE_ATTR(points_yc, std::vector<double>)
-	HBRS_THETA_UTILS_DECLARE_ATTR(points_zc, std::vector<double>)
-	
+	HBRS_THETA_UTILS_DECLARE_ATTR(points, std::vector<point>)
 };
 
 HBRS_THETA_UTILS_NAMESPACE_END

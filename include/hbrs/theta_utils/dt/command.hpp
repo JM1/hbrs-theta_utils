@@ -16,9 +16,39 @@
 
 #pragma once
 
-#ifndef HBRS_THETA_UTILS_FN_DECOMPOSE_HPP
-#define HBRS_THETA_UTILS_FN_DECOMPOSE_HPP
+#ifndef HBRS_THETA_UTILS_DT_COMMAND_HPP
+#define HBRS_THETA_UTILS_DT_COMMAND_HPP
 
-#include <hbrs/theta_utils/fwd/fn/decompose.hpp>
+#include <hbrs/theta_utils/fwd/dt/command.hpp>
+#include <hbrs/theta_utils/dt/command_option.hpp>
+#include <string>
 
-#endif // !HBRS_THETA_UTILS_FN_DECOMPOSE_HPP
+HBRS_THETA_UTILS_NAMESPACE_BEGIN
+
+struct version_cmd {
+	generic_options g_opts;
+	std::string version;
+};
+
+struct help_cmd {
+	generic_options g_opts;
+	std::string help;
+};
+
+struct visualize_cmd {
+	generic_options g_opts;
+	theta_input_options i_opts;
+	theta_output_options o_opts;
+	visualize_options v_opts;
+};
+
+struct pca_cmd {
+	generic_options g_opts;
+	theta_input_options i_opts;
+	theta_output_options o_opts;
+	pca_options pca_opts;
+};
+
+HBRS_THETA_UTILS_NAMESPACE_END
+
+#endif // !HBRS_THETA_UTILS_DT_COMMAND_HPP

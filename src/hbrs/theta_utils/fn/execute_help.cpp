@@ -14,33 +14,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <hbrs/theta_utils/dt/nc_dimension.hpp>
-#include <boost/assert.hpp>
+#include <hbrs/theta_utils/fn/execute.hpp>
+#include <iostream>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
-nc_dimension::nc_dimension(
-	std::string name,
-	std::size_t length
-) : name_{name}, length_{length}
-{}
-
-bool
-nc_dimension::operator==(nc_dimension const& rhs) const {
-	if (this->name() == rhs.name()) {
-		BOOST_ASSERT(this->length() == rhs.length());
-		return true;
-	} else {
-		return false;
-	}
+void
+execute(help_cmd cmd) {
+	std::cout << cmd.help << std::endl;
 }
-
-bool
-nc_dimension::operator!=(nc_dimension const& rhs) const {
-	return !(*this == rhs);
-}
-
-HBRS_THETA_UTILS_DEFINE_ATTR(name, std::string, nc_dimension)
-HBRS_THETA_UTILS_DEFINE_ATTR(length, std::size_t, nc_dimension)
 
 HBRS_THETA_UTILS_NAMESPACE_END

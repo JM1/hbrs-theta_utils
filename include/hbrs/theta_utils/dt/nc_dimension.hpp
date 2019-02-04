@@ -44,6 +44,11 @@ public:
 	nc_dimension&
 	operator=(nc_dimension &&) = default;
 	
+	bool
+	operator==(nc_dimension const& rhs) const;
+    bool
+    operator!=(nc_dimension const& rhs) const;
+	
 	HBRS_THETA_UTILS_DECLARE_ATTR(name, std::string)
 	HBRS_THETA_UTILS_DECLARE_ATTR(length, std::size_t)
 };

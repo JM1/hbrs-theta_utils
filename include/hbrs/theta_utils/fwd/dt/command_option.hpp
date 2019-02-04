@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,14 +16,16 @@
 
 #pragma once
 
-#ifndef HBRS_THETA_UTILS_FWD_FN_DECOMPOSE_HPP
-#define HBRS_THETA_UTILS_FWD_FN_DECOMPOSE_HPP
+#ifndef HBRS_THETA_UTILS_FWD_DT_COMMAND_OPTION_HPP
+#define HBRS_THETA_UTILS_FWD_DT_COMMAND_OPTION_HPP
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/theta_utils/fwd/fn/visualize.hpp>
+#include <boost/hana/fwd/core/make.hpp>
+#include <boost/hana/fwd/core/to.hpp>
 #include <boost/hana/integral_constant.hpp>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
+namespace hana = boost::hana;
 
 enum class pca_backend { matlab_lapack, elemental_openmp, elemental_mpi };
 template <pca_backend backend>
@@ -38,18 +40,12 @@ constexpr auto elemental_openmp_backend_c = elemental_openmp_backend{};
 using elemental_mpi_backend = pca_backend_<pca_backend::elemental_mpi>;
 constexpr auto elemental_mpi_backend_c = elemental_mpi_backend{};
 
-struct pca_decomposition_options {
-	std::vector<std::string> pc_nr_seqs;
-	pca_backend backend;
-};
-
-void
-decompose_with_pca(
-	visualize_options v_opts,
-	pca_decomposition_options pca_opts,
-	bool verbose
-);
+struct generic_options;
+struct theta_input_options;
+struct theta_output_options;
+struct visualize_options;
+struct pca_options;
 
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_FWD_FN_DECOMPOSE_HPP
+#endif // !HBRS_THETA_UTILS_FWD_DT_COMMAND_OPTION_HPP

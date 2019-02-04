@@ -1,4 +1,4 @@
-/* Copyright (c) 2016 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@
 #include <hbrs/theta_utils/config.hpp>
 #include <boost/hana/fwd/core/make.hpp>
 #include <boost/hana/fwd/core/to.hpp>
-#include <hbrs/theta_utils/dt/theta_field.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/optional.hpp>
 #include <tuple>
 #include <string>
 #include <vector>
@@ -39,6 +39,18 @@ struct theta_field_tag {};
 constexpr auto make_theta_field = hana::make<theta_field_tag>;
 constexpr auto to_theta_field = hana::to<theta_field_tag>;
 
+std::vector<theta_field_path>
+find_theta_fields(
+	fs::path const& dir,
+	std::string const& prefix
+);
+
+std::vector<theta_field_path>
+filter_theta_fields_by_domain_num(
+	std::vector<theta_field_path> const& fields,
+	boost::optional<int> const& domain_num
+);
+
 theta_field
 read_theta_field(
 	std::string const& file_path,
@@ -46,14 +58,24 @@ read_theta_field(
 	std::vector<std::string> const& excludes = {} /*regex filter*/
 );
 
-std::vector<
-	std::tuple<theta_field, theta_field_path>
->
+std::vector<theta_field>
 read_theta_fields(
-	std::string const& folder_path,
-	std::string const& input_prefix,
+	std::vector<theta_field_path> const& paths,
 	std::vector<std::string> const& includes = {} /*regex filter*/,
 	std::vector<std::string> const& excludes = {} /*regex filter*/
+);
+
+void
+write_theta_field(
+	theta_field field,
+	std::string const& file_path,
+	bool overwrite = false
+);
+
+void
+write_theta_fields(
+	std::vector< std::tuple<theta_field, theta_field_path> > fields,
+	bool overwrite = false
 );
 
 HBRS_THETA_UTILS_NAMESPACE_END

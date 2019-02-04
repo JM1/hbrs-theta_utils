@@ -32,5 +32,6 @@ endforeach()
 
 #################### list the subdirectories ####################
 
+add_subdirectory(detail)
 add_subdirectory(dt)
 add_subdirectory(fn)

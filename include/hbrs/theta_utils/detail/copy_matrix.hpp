@@ -27,7 +27,14 @@
 #include <hbrs/mpl/fn/m.hpp>
 #include <hbrs/mpl/fn/n.hpp>
 #include <hbrs/mpl/fn/equal.hpp>
+#include <hbrs/mpl/fn/less_equal.hpp>
+#include <hbrs/mpl/fn/greater_equal.hpp>
 #include <hbrs/theta_utils/dt/theta_field.hpp>
+
+#include <hbrs/mpl/dt/rtsam.hpp>
+#include <matlab/dt/matrix.hpp>
+#include <elemental/dt/matrix.hpp>
+#include <elemental/dt/dist_matrix.hpp>
 #include <boost/assert.hpp>
 #include <vector>
 
@@ -54,7 +61,14 @@ size(std::vector<theta_field> const& series) {
 	return {m,n};
 }
 
-template<typename To>
+template<
+	typename To,
+	typename std::enable_if_t<
+		std::is_same< hana::tag_of_t<To>, mpl::rtsam_tag >::value ||
+		std::is_same< hana::tag_of_t<To>, matlab::matrix_tag >::value ||
+		std::is_same< hana::tag_of_t<To>, hana::ext::El::Matrix_tag >::value
+	>* = nullptr
+>
 decltype(auto)
 copy_matrix(std::vector<theta_field> const& from, To && to) {
 	auto from_sz = size(from);
@@ -65,27 +79,45 @@ copy_matrix(std::vector<theta_field> const& from, To && to) {
 	auto to_m = (*mpl::m)(to_sz);
 	auto to_n = (*mpl::n)(to_sz);
 	
-	BOOST_ASSERT((*mpl::equal)(from_m, to_m));
+	BOOST_ASSERT((*mpl::less_equal)(from_m, to_m));
 	BOOST_ASSERT((*mpl::equal)(from_n, to_n));
 	
 	for (std::size_t j = 0; j < from_n; ++j) {
+		BOOST_ASSERT(from[j].density().empty());
+		BOOST_ASSERT(from[j].pressure().empty());
+		BOOST_ASSERT(from[j].residual().empty());
+	
 		for(std::size_t i = 0; i < from_m/3; ++i) {
 			(*mpl::at)(to, mpl::make_matrix_index(i, j)) = from[j].x_velocity().begin()[i];
 		}
 		
 		for(std::size_t i = 0; i < from_m/3; ++i) {
-			(*mpl::at)(to, mpl::make_matrix_index(i+from_m/3, j)) = from[j].x_velocity().begin()[i];
+			(*mpl::at)(to, mpl::make_matrix_index(i+from_m/3, j)) = from[j].y_velocity().begin()[i];
 		}
 		
 		for(std::size_t i = 0; i < from_m/3; ++i) {
-			(*mpl::at)(to, mpl::make_matrix_index(i+from_m/3*2, j)) = from[j].x_velocity().begin()[i];
+			(*mpl::at)(to, mpl::make_matrix_index(i+from_m/3*2, j)) = from[j].z_velocity().begin()[i];
 		}
 	}
 	
 	return HBRS_MPL_FWD(to);
 }
 
-template<typename From>
+decltype(auto)
+copy_matrix(std::vector<theta_field> const& from, El::DistMatrix<double, El::VC, El::STAR, El::ELEMENT> && to) {
+	El::Zero(to); // if to-matrix is larger than from-field then unused rows will just be zero.
+	auto to_local = copy_matrix(from, to.Matrix());
+	return HBRS_MPL_FWD(to);
+}
+
+template<
+	typename From,
+	typename std::enable_if_t<
+		std::is_same< hana::tag_of_t<From>, mpl::rtsam_tag >::value ||
+		std::is_same< hana::tag_of_t<From>, matlab::matrix_tag >::value ||
+		std::is_same< hana::tag_of_t<From>, hana::ext::El::Matrix_tag >::value
+	>* = nullptr
+>
 decltype(auto)
 copy_matrix(From const& from, std::vector<theta_field> & to) {
 	auto from_sz = (*mpl::size)(from);
@@ -96,23 +128,36 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 	auto to_m = (*mpl::m)(to_sz);
 	auto to_n = (*mpl::n)(to_sz);
 	
-	BOOST_ASSERT((*mpl::equal)(from_m, to_m));
+	BOOST_ASSERT((*mpl::greater_equal)(from_m, to_m));
 	BOOST_ASSERT((*mpl::equal)(from_n, to_n));
 	
-	for (std::size_t j = 0; j < from_n; ++j) {
-		for(std::size_t i = 0; i < from_m/3; ++i) {
+	for (std::size_t j = 0; j < to_n; ++j) {
+		to[j].density().clear();
+		to[j].pressure().clear();
+		to[j].residual().clear();
+		BOOST_ASSERT(to[j].x_velocity().size() == to_m/3);
+		BOOST_ASSERT(to[j].y_velocity().size() == to_m/3);
+		BOOST_ASSERT(to[j].z_velocity().size() == to_m/3);
+	
+		for(std::size_t i = 0; i < to_m/3; ++i) {
 			to[j].x_velocity().begin()[i] = (*mpl::at)(from, mpl::make_matrix_index(i, j));
 		}
 		
-		for(std::size_t i = 0; i < from_m/3; ++i) {
-			to[j].x_velocity().begin()[i] = (*mpl::at)(from, mpl::make_matrix_index(i+from_m/3, j));
+		for(std::size_t i = 0; i < to_m/3; ++i) {
+			to[j].y_velocity().begin()[i] = (*mpl::at)(from, mpl::make_matrix_index(i+to_m/3, j));
 		}
 		
-		for(std::size_t i = 0; i < from_m/3; ++i) {
-			to[j].x_velocity().begin()[i] = (*mpl::at)(from, mpl::make_matrix_index(i+from_m/3*2, j));
+		for(std::size_t i = 0; i < to_m/3; ++i) {
+			to[j].z_velocity().begin()[i] = (*mpl::at)(from, mpl::make_matrix_index(i+to_m/3*2, j));
 		}
 	}
 	
+	return HBRS_MPL_FWD(to);
+}
+
+decltype(auto)
+copy_matrix(El::DistMatrix<double, El::VC, El::STAR, El::ELEMENT> const& from, std::vector<theta_field> & to) {
+	auto to_local = copy_matrix(from.LockedMatrix(), to);
 	return HBRS_MPL_FWD(to);
 }
 

@@ -8,15 +8,19 @@
 
 add_library(hbrs_theta_utils SHARED # STATIC
     # TODO: Add files.
+    dt/command.cpp
+    dt/command_option.cpp
     dt/exception.cpp
-    dt/theta_field.cpp
-    dt/theta_grid.cpp
     dt/nc_cntr.cpp
     dt/nc_dimension.cpp
     dt/nc_variable.cpp
-    fn/decompose.cpp
+    dt/theta_field.cpp
+    dt/theta_grid.cpp
+    fn/execute_help.cpp
+    fn/execute_pca.cpp
+    fn/execute_version.cpp
+    fn/execute_visualize.cpp
     fn/pca_filter.cpp
-    fn/visualize.cpp
     fn/vtk.cpp)
 
 get_target_property(hbrs_theta_utils_TARGET_TYPE hbrs_theta_utils TYPE)

@@ -22,7 +22,8 @@
 #include <hbrs/theta_utils/config.hpp>
 
 #include <hbrs/mpl/fwd/dt/pca_filter_result.hpp>
-#include <hbrs/theta_utils/fwd/fn/decompose.hpp>
+#include <hbrs/theta_utils/fwd/dt/command_option.hpp>
+#include <hbrs/theta_utils/detail/int_ranges.hpp>
 #include <hbrs/theta_utils/fwd/dt/theta_field.hpp>
 #include <vector>
 
@@ -34,19 +35,19 @@ mpl::pca_filter_result<
 	std::vector<theta_field> /* data */,
 	std::vector<double> /* latent*/
 >
-pca_filter(std::vector<theta_field> series, std::vector<bool> const& keep, matlab_lapack_backend);
+pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> const& keep, matlab_lapack_backend);
 
 mpl::pca_filter_result<
 	std::vector<theta_field> /* data */,
 	std::vector<double> /* latent*/
 >
-pca_filter(std::vector<theta_field> series, std::vector<bool> const& keep, elemental_openmp_backend);
+pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> const& keep, elemental_openmp_backend);
 
 mpl::pca_filter_result<
 	std::vector<theta_field> /* data */,
 	std::vector<double> /* latent*/
 >
-pca_filter(std::vector<theta_field> series, std::vector<bool> const& keep, elemental_mpi_backend);
+pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> const& keep, elemental_mpi_backend);
 
 HBRS_THETA_UTILS_NAMESPACE_END
 

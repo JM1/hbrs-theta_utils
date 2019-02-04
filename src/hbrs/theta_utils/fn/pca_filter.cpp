@@ -21,134 +21,126 @@
 #include <hbrs/mpl/fn/size.hpp>
 #include <hbrs/mpl/fn/m.hpp>
 #include <hbrs/mpl/fn/n.hpp>
+#include <hbrs/mpl/detail/mpi.hpp>
 #include <hbrs/theta_utils/dt/theta_field.hpp>
 #include <matlab/dt/matrix.hpp>
 #include <elemental/dt/matrix.hpp>
+#include <elemental/dt/dist_matrix.hpp>
 #include <vector>
 #include <algorithm>
 #include <boost/numeric/conversion/cast.hpp>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace mpl = hbrs::mpl;
+namespace mpi = hbrs::mpl::detail::mpi;
 
-//TODO: Uncomment and implement!
-// mpl::pca_filter_result<
-// 	matrix::Matrix<double> /* data */,
-// 	vector::Vector<double> /* latent*/
-// >
-// pca_filter_impl1::operator()(matrix::Matrix<double> a, mpl::rtsav<bool> const& keep) const {
-// 	auto && dec = pca2::pca(a, true);
-// 	auto && coeff = dec.coeff();
-// 	auto && score = dec.score();
-// 	auto && latent = dec.latent();
-// 	auto && mu = dec.mean();
-// 	
-// 	auto && size = matrix::size_of(coeff);
-// 	auto && m = std::get<0>(size);
-// 	auto && n = std::get<1>(size);
-// 	
-// 	for(std::size_t i = 0; i < n; ++i) {
-// 		if(!keep[i]) {
-// 			for(std::size_t j = 0; j < m; ++j) {
-// 				coeff[j][i] = 0;
-// 			}
-// 		}
-// 	}
-// 	
-// 	typedef double Real;
-// 	auto && reduced = matrix::plus<Real>(
-// 		matrix::product<Real>(
-// 			score, matrix::transpose<Real>(coeff)
-// 		), 
-// 		mu,
-// 		matrix::VectorType::RowVector
-// 	);
-// 	
-// 	return { reduced, latent };
-// }
-// 
-// mpl::pca_filter_result<
-// 	std::vector<theta_field> /* data */,
-// 	std::vector<double> /* latent*/
-// >
-// pca_filter_impl2::operator()(std::vector<theta_field> series, mpl::rtsav<bool> const& keep) const {
-// 	
-// 	BOOST_ASSERT(series.size() > 0);
-// 	std::size_t const m = series[0].x_velocity().size() + series[0].y_velocity().size() + series[0].z_velocity().size();
-// 	std::size_t const n = series.size();
-// 	BOOST_ASSERT(m > 0);
-// 	BOOST_ASSERT(n > 0);
-// 	
-// 	matrix::Matrix<double> mat { boost::extents[m][n] };
-// 	typedef matrix::Matrix<double>::index _index;
-// 	typedef boost::multi_array_types::index_range _range;
-// 	
-// 	matrix::Matrix<double>::index_gen indices;
-// 	for (_index i = 0; i < (signed)n; ++i) {
-// 		auto column = mat[ indices[_range()][i] ];
-// 		
-// 		std::copy(series[i].x_velocity().begin(), series[i].x_velocity().end(), column.begin());
-// 		std::copy(series[i].y_velocity().begin(), series[i].y_velocity().end(), column.begin()+series[i].x_velocity().size());
-// 		std::copy(series[i].z_velocity().begin(), series[i].z_velocity().end(), column.begin()+series[i].x_velocity().size()+series[i].y_velocity().size());
-// 	}
-// 	
-// 	auto && reduced = pca_filter_impl1{}(mat, keep);
-// 	auto && data_ = reduced.data();
-// 	auto && latent_ = reduced.latent();
-// 	
-// 	std::vector<double> latent__;
-// 	latent__.resize(latent_.shape()[0]);
-// 	
-// 	std::copy(latent_.begin(), latent_.end(), latent__.data());
-// 	
-// 	for (_index i = 0; i < (signed)n; ++i) {
-// 		auto && column = data_[ indices[_range()][i] ];
-// 		
-// 		std::copy(column.begin()+0*series[i].x_velocity().size(), column.begin()+1*series[i].x_velocity().size(), series[i].x_velocity().begin());
-// 		std::copy(column.begin()+1*series[i].x_velocity().size(), column.begin()+2*series[i].x_velocity().size(), series[i].y_velocity().begin());
-// 		std::copy(column.begin()+2*series[i].x_velocity().size(), column.begin()+3*series[i].x_velocity().size(), series[i].z_velocity().begin());
-// 	}
-// 	
-// 	return { series, latent__ };
-// }
+namespace {
 
-template<typename From>
-decltype(auto)
-copy_vector(From const& from, std::vector<double> && to) {
+template<
+	typename From,
+	typename std::enable_if_t<
+		std::is_same< hana::tag_of_t<From>, matlab::column_vector_tag >::value ||
+		std::is_same< hana::tag_of_t<From>, elemental::column_vector_tag >::value
+	>* = nullptr
+>
+auto
+to_vector(From const& from) {
 	auto from_sz = (*mpl::size)(from);
-	auto to_sz = (*mpl::size)(to);
-	
-	BOOST_ASSERT((*mpl::equal)(from_sz, to_sz));
+	std::vector<double> to(from_sz);
+	BOOST_ASSERT(to.size() == from_sz);
 	
 	for (std::size_t i = 0; i < from_sz; ++i) {
 		to[i] = (*mpl::at)(from, i);
 	}
 	
-	return HBRS_MPL_FWD(to);
+	return to;
 }
 
-template<typename To>
+template<
+	typename Matrix,
+	typename std::enable_if_t<
+		std::is_same< hana::tag_of_t<Matrix>, hana::ext::El::DistMatrix_tag>::value
+	>* = nullptr
+>
+auto
+to_vector(elemental::dist_column_vector<Matrix> const& from) {
+	auto from_local = from.data().LockedMatrix();
+	auto from_sz = from_local.Height();
+	BOOST_ASSERT(from_local.Width() == 1);
+	
+	std::vector<double> to(from_sz);
+	BOOST_ASSERT(to.size() == from_sz);
+	
+	for (std::size_t i = 0; i < from_sz; ++i) {
+		to[i] = from_local.Get(i, 0);
+	}
+	
+	return to;
+}
+
+auto
+make_matrix(hana::basic_type<matlab::matrix_tag>, mpl::matrix_size<int, int> sz) {
+	return matlab::make_matrix(hana::type_c<double>, sz);
+}
+
+auto
+make_matrix(hana::basic_type<hana::ext::El::Matrix_tag>, mpl::matrix_size<El::Int, El::Int> sz) {
+	return elemental::make_matrix(hana::type_c<double>, sz);
+}
+
+auto
+make_matrix(hana::basic_type<hana::ext::El::DistMatrix_tag>, mpl::matrix_size<El::Int, El::Int> sz) {
+	static El::Grid const grid{El::mpi::COMM_WORLD};
+	
+
+	auto min_m = El::mpi::AllReduce(sz.m(), El::mpi::MIN, grid.Comm());
+	auto max_m = El::mpi::AllReduce(sz.m(), El::mpi::MAX, grid.Comm());
+	BOOST_ASSERT(min_m <= max_m || min_m > max_m);
+	auto full_m = max_m * mpi::size(); //TODO: Is this correct?
+
+// 	auto full_m = El::mpi::AllReduce(sz.m(), El::mpi::SUM, grid.Comm());
+// 	BOOST_ASSERT(min_m * mpi::size() == full_m);	
+	
+	auto min_n = El::mpi::AllReduce(sz.n(), El::mpi::MIN, grid.Comm());
+	auto max_n = El::mpi::AllReduce(sz.n(), El::mpi::MAX, grid.Comm());
+	BOOST_ASSERT(min_n == max_n);
+	
+	El::DistMatrix<double, El::VC, El::STAR, El::ELEMENT> a{grid};
+	a.Resize(full_m, sz.n());
+	
+	BOOST_ASSERT(a.Matrix().Width() == sz.n());
+	return a;
+}
+
+/* unnamed namespace */ }
+
+template<typename ToTag>
 mpl::pca_filter_result<
 	std::vector<theta_field> /* data */,
 	std::vector<double> /* latent*/
 >
-pca_filter(std::vector<theta_field> series, std::vector<bool> const& keep, hana::basic_type<To>) {
+pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> const& keep, hana::basic_type<ToTag>) {
 	auto sz = detail::size(series);
 	auto m = (*mpl::m)(sz);
 	auto n = (*mpl::n)(sz);
-	auto latent_sz = (m-1)<n ? m-1 : std::min(m,n);
-	BOOST_ASSERT((*mpl::equal)(keep.size(), latent_sz));
 	
-	using M = decltype( (*mpl::m)(mpl::size(std::declval<To>())) );
-	using N = decltype( (*mpl::n)(mpl::size(std::declval<To>())) );
-	auto to_m = boost::numeric_cast<M>(m);
-	auto to_n = boost::numeric_cast<N>(n);
+	auto mat = detail::copy_matrix(series, make_matrix(hana::type_c<ToTag>, {m, n}));
+	auto mat_sz = (*mpl::size)(mat);
+	auto mat_m = (*mpl::m)(mat_sz);
+	auto mat_n = (*mpl::n)(mat_sz);
+	auto latent_sz = (mat_m-1)<mat_n ? mat_m-1 : std::min(mat_m,mat_n);
 	
-	auto mat = detail::copy_matrix(series, To{to_m, to_n});
-	auto reduced = (*mpl::pca_filter)(mat, keep);
+	auto reduced = (*mpl::pca_filter)(
+		mat,
+		[&keep](std::size_t i) {
+			return detail::in_int_ranges(keep, i); 
+		}
+	);
 	
 	series = detail::copy_matrix(reduced.data(), series);
-	auto latent = copy_vector(reduced.latent(), std::vector<double>(latent_sz));
+
+	BOOST_ASSERT((*mpl::equal)(mpl::size(reduced.latent()), latent_sz));
+	auto latent = to_vector(reduced.latent());
 	
 	return {series, latent};
 }
@@ -157,25 +149,24 @@ mpl::pca_filter_result<
 	std::vector<theta_field> /* data */,
 	std::vector<double> /* latent*/
 >
-pca_filter(std::vector<theta_field> series, std::vector<bool> const& keep, matlab_lapack_backend) {
-	return pca_filter(series, keep, hana::type_c<matlab::matrix<real_T>>);
+pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> const& keep, matlab_lapack_backend) {
+	return pca_filter(series, keep, hana::type_c<matlab::matrix_tag>);
 }
 
 mpl::pca_filter_result<
 	std::vector<theta_field> /* data */,
 	std::vector<double> /* latent*/
 >
-pca_filter(std::vector<theta_field> series, std::vector<bool> const& keep, elemental_openmp_backend) {
-	return pca_filter(series, keep, hana::type_c<El::Matrix<double>>);
+pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> const& keep, elemental_openmp_backend) {
+	return pca_filter(series, keep, hana::type_c<hana::ext::El::Matrix_tag>);
 }
 
 mpl::pca_filter_result<
 	std::vector<theta_field> /* data */,
 	std::vector<double> /* latent*/
 >
-pca_filter(std::vector<theta_field> series, std::vector<bool> const& keep, elemental_mpi_backend) {
-	BOOST_ASSERT_MSG(false, "TODO");
-	return {}; //TODO
+pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> const& keep, elemental_mpi_backend) {
+	return pca_filter(series, keep, hana::type_c<hana::ext::El::DistMatrix_tag>);
 }
 
 HBRS_THETA_UTILS_NAMESPACE_END

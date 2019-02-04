@@ -20,5 +20,43 @@
 #define HBRS_THETA_UTILS_FN_VTK_HPP
 
 #include <hbrs/theta_utils/fwd/fn/vtk.hpp>
+#include <hbrs/theta_utils/config.hpp>
+#include <hbrs/theta_utils/preprocessor/core.hpp>
+#include <boost/filesystem.hpp>
+#include <string>
+
+HBRS_THETA_UTILS_NAMESPACE_BEGIN
+namespace hana = boost::hana;
+namespace fs = boost::filesystem;
+
+struct vtk_path {
+	vtk_path(fs::path folder, std::string basename, bool distributed, vtk_file_format format);
+	vtk_path(vtk_path const&) = default;
+	vtk_path(vtk_path &&) = default;
+	
+	vtk_path&
+	operator=(vtk_path const&) = default;
+	vtk_path&
+	operator=(vtk_path &&) = default;
+	
+	std::string
+	file_extension() const;
+	
+	fs::path
+	filename() const;
+	
+	fs::path
+	full_path() const;
+	
+	explicit
+	operator fs::path() const;
+	
+	HBRS_THETA_UTILS_DECLARE_ATTR(folder, fs::path)
+	HBRS_THETA_UTILS_DECLARE_ATTR(basename, std::string)
+	HBRS_THETA_UTILS_DECLARE_ATTR(distributed, bool)
+	HBRS_THETA_UTILS_DECLARE_ATTR(format, vtk_file_format)
+};
+
+HBRS_THETA_UTILS_NAMESPACE_END
 
 #endif // !HBRS_THETA_UTILS_FN_VTK_HPP

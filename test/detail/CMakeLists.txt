@@ -9,7 +9,7 @@
 get_filename_component(_pwd "${CMAKE_CURRENT_LIST_DIR}" NAME)
 add_custom_target(_${_pwd}_tests)
 
-foreach(target theta_field)
+foreach(target int_ranges)
 	hbrs_theta_utils_add_test(${target})
 	target_link_libraries(${target} hbrs_theta_utils)
 	add_dependencies(_${_pwd}_tests ${target})

@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,38 +16,20 @@
 
 #pragma once
 
-#ifndef HBRS_THETA_UTILS_FWD_DT_NC_CNTR_HPP
-#define HBRS_THETA_UTILS_FWD_DT_NC_CNTR_HPP
+#ifndef HBRS_THETA_UTILS_FWD_DT_COMMAND_HPP
+#define HBRS_THETA_UTILS_FWD_DT_COMMAND_HPP
 
 #include <hbrs/theta_utils/config.hpp>
 #include <boost/hana/fwd/core/make.hpp>
 #include <boost/hana/fwd/core/to.hpp>
 
-#include <vector>
-#include <string>
-
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
-namespace hana = boost::hana;
 
-struct nc_cntr;
-struct nc_cntr_tag {};
-constexpr auto make_nc_cntr = hana::make<nc_cntr_tag>;
-constexpr auto to_nc_cntr = hana::to<nc_cntr_tag>;
-
-nc_cntr
-read_nc_cntr(
-	std::string const& path,
-	std::vector<std::string> const& includes = {} /*regex filter*/,
-	std::vector<std::string> const& excludes = {} /*regex filter*/
-);
-
-void
-write_nc_cntr(
-	nc_cntr const& cntr,
-	std::string const& path,
-	bool overwrite = false
-);
+struct version_cmd;
+struct help_cmd;
+struct visualize_cmd;
+struct pca_cmd;
 
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_FWD_DT_NC_CNTR_HPP
+#endif // !HBRS_THETA_UTILS_FWD_DT_COMMAND_HPP

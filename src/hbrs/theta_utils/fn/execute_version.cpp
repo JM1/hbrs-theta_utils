@@ -14,11 +14,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <hbrs/theta_utils/fn/execute.hpp>
+#include <iostream>
 
-#ifndef HBRS_THETA_UTILS_FN_VISUALIZE_HPP
-#define HBRS_THETA_UTILS_FN_VISUALIZE_HPP
+HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
-#include <hbrs/theta_utils/fwd/fn/visualize.hpp>
+void
+execute(version_cmd cmd) {
+	std::cout << cmd.version << std::endl;
+}
 
-#endif // !HBRS_THETA_UTILS_FN_VISUALIZE_HPP
+HBRS_THETA_UTILS_NAMESPACE_END

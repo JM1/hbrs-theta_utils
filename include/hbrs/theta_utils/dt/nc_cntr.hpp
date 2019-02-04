@@ -36,7 +36,7 @@ namespace hana = boost::hana;
 struct nc_cntr {
 public:
 	nc_cntr(
-		std::vector<nc_dimension> dims, 
+		std::vector<nc_dimension> dims,
 		std::vector<nc_variable> vars
 	);
 	
@@ -48,12 +48,17 @@ public:
 	nc_cntr&
 	operator=(nc_cntr &&) = default;
 	
-	boost::optional<nc_dimension&> dimension(std::string const& name);
-	boost::optional<nc_dimension const&> dimension(std::string const& name) const;
+	boost::optional<nc_dimension&>
+	dimension(std::string const& name);
 	
-	boost::optional<nc_variable &> variable(std::string const& name);
-	boost::optional<nc_variable const&> variable(std::string const& name) const;
+	boost::optional<nc_dimension const&>
+	dimension(std::string const& name) const;
 	
+	boost::optional<nc_variable &>
+	variable(std::string const& name);
+	
+	boost::optional<nc_variable const&>
+	variable(std::string const& name) const;
 	
 	HBRS_THETA_UTILS_DECLARE_ATTR(dimensions, std::vector<nc_dimension>)
 	HBRS_THETA_UTILS_DECLARE_ATTR(variables, std::vector<nc_variable>)

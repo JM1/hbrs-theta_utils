@@ -22,7 +22,7 @@
 #include <hbrs/theta_utils/fwd/fn/pca_filter.hpp>
 
 #include <hbrs/mpl/dt/pca_filter_result.hpp>
-#include <hbrs/theta_utils/fn/decompose.hpp>
+#include <hbrs/theta_utils/dt/command_option.hpp>
 #include <hbrs/theta_utils/dt/theta_field.hpp>
 
 #endif // !HBRS_THETA_UTILS_FN_PCA_FILTER_HPP

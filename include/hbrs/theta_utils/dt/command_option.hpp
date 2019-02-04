@@ -16,34 +16,45 @@
 
 #pragma once
 
-#ifndef HBRS_THETA_UTILS_FWD_FN_VISUALIZE_HPP
-#define HBRS_THETA_UTILS_FWD_FN_VISUALIZE_HPP
+#ifndef HBRS_THETA_UTILS_DT_COMMAND_OPTION_HPP
+#define HBRS_THETA_UTILS_DT_COMMAND_OPTION_HPP
 
-#include <hbrs/theta_utils/config.hpp>
-#include <hbrs/theta_utils/fwd/fn/vtk.hpp>
-#include <string>
+#include <hbrs/theta_utils/fwd/dt/command_option.hpp>
+#include <hbrs/theta_utils/fn/vtk.hpp>
 #include <vector>
+#include <string>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
-struct visualize_options {
-	std::string path;
-	std::string grid_prefix;
-	std::string input_prefix;
-	std::string output_prefix;
-	vtk_file_format output_format;
-	bool overwrite;
-	bool simple_numbering;
-	std::vector<std::string> includes;
-	std::vector<std::string> excludes;
+struct generic_options {
+	bool verbose = false;
+	bool debug = false;
 };
 
-void
-visualize(
-	visualize_options v_opts,
-	bool verbose
-);
+struct theta_input_options {
+	std::string path;
+	std::string grid_prefix;
+	std::string pval_prefix;
+};
+
+struct theta_output_options {
+	std::string path;
+	std::string prefix;
+	bool overwrite;
+};
+
+struct visualize_options {
+	std::vector<std::string> includes;
+	std::vector<std::string> excludes;
+	vtk_file_format format;
+	bool simple_numbering;
+};
+
+struct pca_options {
+	std::vector<std::string> pc_nr_seqs;
+	pca_backend backend;
+};
 
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_FWD_FN_VISUALIZE_HPP
+#endif // !HBRS_THETA_UTILS_DT_COMMAND_OPTION_HPP

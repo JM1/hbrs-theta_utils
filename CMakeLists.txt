@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
 #################### project settings ####################
 
-project(hbrs-theta_utils VERSION 2018.0.0.0)
+project(hbrs-theta_utils VERSION 2019.0.0.0)
 
 include(FeatureSummary)
 
