@@ -54,7 +54,7 @@ make_stats_output_path(
 ) {
 	return 
 		output_folder /
-			(output_prefix + '.' + output_tag + ".stat" + 
+			(output_prefix + '_' + output_tag + ".stat" + 
 				(domain_num ? std::string{".domain_"} + boost::lexical_cast<std::string>(*domain_num) : "") 
 			);
 }
@@ -144,7 +144,7 @@ write_stats(
 
 void
 decompose_with_pca(
-	std::vector<theta_field_path> paths,
+	std::vector<theta_field_path> const& paths,
 	detail::int_ranges<std::size_t> const& includes,
 	pca_backend const& backend,
 	fs::path const& output_folder,
@@ -157,9 +157,11 @@ decompose_with_pca(
 	std::vector<theta_field> series = read_theta_fields(paths, {".*_velocity"});
 	
 	boost::optional<int> domain_num = paths[0].domain_num();
+	BOOST_ASSERT(series.at(0).ndomains() == mpi::size()); //TODO: Turn assertion into exception?
 	
 	// test for existing files before starting decomposition
-	for(auto & path : paths) {
+	std::vector<theta_field_path> output_paths = paths;
+	for(auto & path : output_paths) {
 		BOOST_ASSERT(path.domain_num() == domain_num);
 		
 		// transform input paths to output paths
@@ -209,8 +211,29 @@ decompose_with_pca(
 	
 	BOOST_ASSERT((*mpl::size)(reduced.latent()) == (*mpl::size)(reduced.data()));
 	
+	{
+		// we need global_id field if distributed, e.g. for visualization
+		std::vector<theta_field> global_ids = read_theta_fields(paths, {"global_id"});
+		BOOST_ASSERT(reduced.data().size() == global_ids.size());
+		BOOST_ASSERT(mpi::size() > 1
+			? global_ids[0].global_id().size() > 0
+			: global_ids[0].global_id().size() == 0
+		);
+		
+		for(std::size_t i = 0; i < reduced.data().size(); ++i) {
+			auto & src = global_ids[i].global_id();
+			auto & tgt = reduced.data()[i].global_id();
+			
+			BOOST_ASSERT(mpi::size() > 1
+				? src.size() == reduced.data()[i].x_velocity().size() /* distributed */
+				: src.size() == 0
+			);
+			
+			tgt = std::move(src);
+		}
+	}
 	write_theta_fields(
-		mpl::detail::zip_impl_std_tuple_vector{}(std::move(reduced.data()), std::move(paths)),
+		mpl::detail::zip_impl_std_tuple_vector{}(std::move(reduced.data()), std::move(output_paths)),
 		overwrite
 	);
 	write_stats(std::move(reduced.latent()), stats_path);
