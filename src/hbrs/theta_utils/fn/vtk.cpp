@@ -1055,6 +1055,8 @@ convert_to_vtk(
 			excludes
 		);
 		
+		BOOST_ASSERT(*field.ndomains() == mpi::size());
+		
 		vtk_path vtk_path = vtk_paths[i];
 		auto vtk_grid = make_vtk_unstructured_grid(grid, field);
 		

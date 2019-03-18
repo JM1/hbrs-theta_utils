@@ -48,7 +48,8 @@ make_theta_fields(mpl::rtsam<double, mpl::storage_order::row_major> const& from)
 			std::vector<double>(sz.m()/3) /*z_velocity*/,
 			{} /*pressure*/,
 			{} /*residual*/,
-			{} /* global_id */
+			{} /* global_id */,
+			{} /* ndomains */
 		}
 	);
 	

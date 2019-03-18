@@ -96,14 +96,16 @@ theta_field::theta_field(
 	std::vector<double> z_velocity,
 	std::vector<double> pressure,
 	std::vector<double> residual,
-	std::vector<int> global_id
+	std::vector<int> global_id,
+	boost::optional<int> ndomains
 ) : density_{density},
 	x_velocity_{x_velocity},
 	y_velocity_{y_velocity},
 	z_velocity_{z_velocity},
 	pressure_{pressure},
 	residual_{residual},
-	global_id_{global_id}
+	global_id_{global_id},
+	ndomains_{ndomains}
 	{}
 
 namespace {
@@ -150,6 +152,15 @@ theta_field::theta_field(nc_cntr cntr) {
 	__get(global_id, int)
 	
 	#undef __get
+	
+	{
+		auto opt = cntr.attribute("ndomains");
+		if (opt) {
+			std::vector<int> ndomains = boost::get<std::vector<int>>(opt->value());
+			BOOST_ASSERT(ndomains.size() == 1);
+			ndomains_ = ndomains[0];
+		}
+	}
 }
 
 HBRS_THETA_UTILS_DEFINE_ATTR(density, std::vector<double>, theta_field)
@@ -159,6 +170,7 @@ HBRS_THETA_UTILS_DEFINE_ATTR(z_velocity, std::vector<double>, theta_field)
 HBRS_THETA_UTILS_DEFINE_ATTR(pressure, std::vector<double>, theta_field)
 HBRS_THETA_UTILS_DEFINE_ATTR(residual, std::vector<double>, theta_field)
 HBRS_THETA_UTILS_DEFINE_ATTR(global_id, std::vector<int>, theta_field)
+HBRS_THETA_UTILS_DEFINE_ATTR(ndomains, boost::optional<int>, theta_field)
 
 theta_field
 read_theta_field(
@@ -324,6 +336,7 @@ nc_cntr
 gen_nc_cntr(theta_field field) {
 	std::vector<nc_dimension> dims;
 	std::vector<nc_variable> vars;
+	std::vector<nc_attribute> atts;
 	
 	#define __add(__name)                                                                                              \
 		{                                                                                                              \
@@ -357,7 +370,16 @@ gen_nc_cntr(theta_field field) {
 	
 	#undef __add
 	
-	return {dims, vars};
+	{
+		if (field.ndomains()) {
+			atts.push_back({
+				"ndomains",
+				std::vector<int>{{ *field.ndomains() }}
+			});
+		}
+	}
+	
+	return {dims, vars, atts};
 }
 
 /* unnamed namespace */ }

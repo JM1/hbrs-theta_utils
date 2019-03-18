@@ -27,8 +27,9 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
 nc_cntr::nc_cntr(
 	std::vector<nc_dimension> dims,
-	std::vector<nc_variable> vars
-) : dimensions_{dims}, variables_{vars} {
+	std::vector<nc_variable> vars,
+	std::vector<nc_attribute> attrs
+) : dimensions_{dims}, variables_{vars}, attributes_{attrs} {
 	// each dimension a variable uses must be in dims
 	for(nc_variable const& var : vars) {
 		for(nc_dimension const& dim : var.dimensions()) {
@@ -45,6 +46,7 @@ nc_cntr::nc_cntr(
 
 HBRS_THETA_UTILS_DEFINE_ATTR(dimensions, std::vector<nc_dimension>, nc_cntr)
 HBRS_THETA_UTILS_DEFINE_ATTR(variables, std::vector<nc_variable>, nc_cntr)
+HBRS_THETA_UTILS_DEFINE_ATTR(attributes, std::vector<nc_attribute>, nc_cntr)
 
 #define __find_if(__cntr)                                                                                              \
 	auto const it = std::find_if(                                                                                      \
@@ -75,6 +77,16 @@ nc_cntr::variable(std::string const& name) const {
 	__find_if(variables_)
 }
 
+boost::optional<nc_attribute &>
+nc_cntr::attribute(std::string const& name) {
+	__find_if(attributes_)
+}
+
+boost::optional<nc_attribute const&>
+nc_cntr::attribute(std::string const& name) const {
+	__find_if(attributes_)
+}
+
 #undef __find_if
 
 namespace {
@@ -101,10 +113,11 @@ read_nc_cntr(
 	std::vector<std::string> const& includes /*regex filter*/,
 	std::vector<std::string> const& excludes /*regex filter*/
 ) {
-	int ncid, ndims, nvars, status;
+	int ncid, ndims, nvars, ngatts, status;
 	
 	std::vector<nc_dimension> dimensions;
 	std::vector<nc_variable> variables;
+	std::vector<nc_attribute> attributes;
 	
 	struct var {
 		int id;
@@ -197,8 +210,8 @@ read_nc_cntr(
 	if (var.type == __nc_type) {                                                                                       \
 		std::vector<__type> data(total(var.dimids));                                                                   \
 		status = nc_get_var(ncid, var.id, data.data());                                                                \
-		variables.push_back({var.name, get_dims(var.dimids), {data}});                                                 \
 		throw_if_error(ncid, status, path, true);                                                                      \
+		variables.push_back({var.name, get_dims(var.dimids), {data}});                                                 \
 	} else
 
 	for(int i = 0; i < nvars; ++i) {
@@ -222,11 +235,51 @@ read_nc_cntr(
 	
 #undef __nc_type_case
 
+#define __nc_type_case(__nc_type, __type)                                                                              \
+	if (xtype == __nc_type) {                                                                                          \
+		std::vector<__type> value(len);                                                                                \
+		status = nc_get_att (ncid, NC_GLOBAL, name.data(), value.data());                                              \
+		throw_if_error(ncid, status, path, true);                                                                      \
+		attributes.push_back({name.data(), value});                                                                    \
+	} else
+
+	status = nc_inq_natts(ncid, &ngatts);
+	throw_if_error(ncid, status, path, true);
+	attributes.reserve(ngatts);
+	{
+		std::array<char, NC_MAX_NAME+1> name;
+		size_t length;
+		for(int gattrid = 0; gattrid < ngatts; ++gattrid) {
+			name.fill(0);
+			status = nc_inq_attname(ncid, NC_GLOBAL, gattrid, name.data());
+			throw_if_error(ncid, status, path, true);
+			
+			nc_type xtype;
+			size_t len;
+			status = nc_inq_att(ncid, NC_GLOBAL, name.data(), &xtype, &len);
+			throw_if_error(ncid, status, path, true);
+			
+			__nc_type_case(NC_DOUBLE, double)
+			__nc_type_case(NC_FLOAT, float)
+			__nc_type_case(NC_INT, int)
+			__nc_type_case(NC_LONG, long)
+			__nc_type_case(NC_SHORT, short)
+			__nc_type_case(NC_CHAR, char)
+			__nc_type_case(NC_UINT, unsigned int)
+			__nc_type_case(NC_USHORT, unsigned short)
+			{
+				status = NC_EBADTYPID;
+				throw_if_error(ncid, status, path, true);
+			}
+		}
+	}
+#undef __nc_type_case
+
 	status = nc_close(ncid);
 	throw_if_error(ncid, status, path, false);
 	
 	
-	return nc_cntr{dimensions, variables};
+	return nc_cntr{dimensions, variables, attributes};
 }
 
 struct nc_type_visitor : public boost::static_visitor<std::optional<nc_type>> {
@@ -259,6 +312,14 @@ struct array_ptr_visitor : public boost::static_visitor<void const *> {
 	void const *
 	operator()(std::vector<T> const& v) const {
 		return v.data();
+	}
+};
+
+struct array_size_visitor : public boost::static_visitor<std::size_t> {
+	template<typename T>
+	std::size_t
+	operator()(std::vector<T> const& v) const {
+		return v.size();
 	}
 };
 
@@ -310,6 +371,22 @@ write_nc_cntr(
 		throw_if_error(ncid, status, path, true);
 		++nvars;
 		BOOST_ASSERT(varid == nvars-1);
+	}
+	
+	for(nc_attribute const& attr : cntr.attributes()) {
+		int gattrid;
+		
+		std::optional<nc_type> xtype = boost::apply_visitor(nc_type_visitor{}, attr.value());
+		if (!xtype) {
+			status = NC_EBADTYPID;
+			throw_if_error(ncid, status, path, true);
+		}
+		
+		status = nc_put_att(ncid, NC_GLOBAL, attr.name().data(), *xtype,
+			boost::apply_visitor(array_size_visitor{}, attr.value()),
+			boost::apply_visitor(array_ptr_visitor{}, attr.value())
+		);
+		throw_if_error(ncid, status, path, true);
 	}
 	
 	status = nc_enddef(ncid);

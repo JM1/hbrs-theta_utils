@@ -11,6 +11,7 @@ add_library(hbrs_theta_utils SHARED # STATIC
     dt/command.cpp
     dt/command_option.cpp
     dt/exception.cpp
+    dt/nc_attribute.cpp
     dt/nc_cntr.cpp
     dt/nc_dimension.cpp
     dt/nc_variable.cpp

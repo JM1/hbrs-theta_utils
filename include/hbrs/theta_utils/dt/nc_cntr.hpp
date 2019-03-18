@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include <hbrs/theta_utils/fwd/dt/nc_cntr.hpp>
 #include <hbrs/theta_utils/dt/nc_dimension.hpp>
 #include <hbrs/theta_utils/dt/nc_variable.hpp>
+#include <hbrs/theta_utils/dt/nc_attribute.hpp>
 #include <hbrs/theta_utils/preprocessor/core.hpp>
 #include <boost/optional.hpp>
 #include <boost/hana/core.hpp>
@@ -37,7 +38,8 @@ struct nc_cntr {
 public:
 	nc_cntr(
 		std::vector<nc_dimension> dims,
-		std::vector<nc_variable> vars
+		std::vector<nc_variable> vars,
+		std::vector<nc_attribute> attrs
 	);
 	
 	nc_cntr(nc_cntr const&) = default;
@@ -60,8 +62,15 @@ public:
 	boost::optional<nc_variable const&>
 	variable(std::string const& name) const;
 	
+	boost::optional<nc_attribute &>
+	attribute(std::string const& name);
+	
+	boost::optional<nc_attribute const&>
+	attribute(std::string const& name) const;
+	
 	HBRS_THETA_UTILS_DECLARE_ATTR(dimensions, std::vector<nc_dimension>)
 	HBRS_THETA_UTILS_DECLARE_ATTR(variables, std::vector<nc_variable>)
+	HBRS_THETA_UTILS_DECLARE_ATTR(attributes, std::vector<nc_attribute>)
 };
 
 HBRS_THETA_UTILS_NAMESPACE_END
@@ -79,9 +88,10 @@ struct make_impl<hbrs::theta_utils::nc_cntr_tag> {
 	static hbrs::theta_utils::nc_cntr
 	apply(
 		std::vector<hbrs::theta_utils::nc_dimension> dims,
-		std::vector<hbrs::theta_utils::nc_variable> vars
+		std::vector<hbrs::theta_utils::nc_variable> vars,
+		std::vector<hbrs::theta_utils::nc_attribute> attrs
 	) {
-		return {dims, vars};
+		return {dims, vars, attrs};
 	}
 	
 };

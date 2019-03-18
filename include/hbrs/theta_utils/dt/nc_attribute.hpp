@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,12 +16,11 @@
 
 #pragma once
 
-#ifndef HBRS_THETA_UTILS_DT_NC_VARIABLE_HPP
-#define HBRS_THETA_UTILS_DT_NC_VARIABLE_HPP
+#ifndef HBRS_THETA_UTILS_DT_NC_ATTRIBUTE_HPP
+#define HBRS_THETA_UTILS_DT_NC_ATTRIBUTE_HPP
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/theta_utils/fwd/dt/nc_variable.hpp>
-#include <hbrs/theta_utils/dt/nc_dimension.hpp>
+#include <hbrs/theta_utils/fwd/dt/nc_attribute.hpp>
 #include <hbrs/theta_utils/preprocessor/core.hpp>
 #include <boost/hana/core.hpp>
 #include <vector>
@@ -31,7 +30,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
-struct nc_variable {
+struct nc_attribute {
 public:
 	/* TODO: Add more data types here and in nc_ctnr.cpp!
 	 * Ref.: 
@@ -40,29 +39,28 @@ public:
 	 */
 	
 	typedef boost::variant<
-		std::vector<double>, 
-		std::vector<float>, 
+		std::vector<double>,
+		std::vector<float>,
 		std::vector<int>,
-		std::vector<long>, 
-		std::vector<short>, 
-		std::vector<char>, 
-		std::vector<unsigned int>, 
+		std::vector<long>,
+		std::vector<short>,
+		std::vector<char>,
+		std::vector<unsigned int>,
 		std::vector<unsigned short>
 	> array;
 	
-	nc_variable(std::string name, std::vector<nc_dimension> dims, array data);
+	nc_attribute(std::string name, array value);
 	
-	nc_variable(nc_variable const&) = default;
-	nc_variable(nc_variable &&) = default;
+	nc_attribute(nc_attribute const&) = default;
+	nc_attribute(nc_attribute &&) = default;
 	
-	nc_variable&
-	operator=(nc_variable const&) = default;
-	nc_variable&
-	operator=(nc_variable &&) = default;
+	nc_attribute&
+	operator=(nc_attribute const&) = default;
+	nc_attribute&
+	operator=(nc_attribute &&) = default;
 	
 	HBRS_THETA_UTILS_DECLARE_ATTR(name, std::string)
-	HBRS_THETA_UTILS_DECLARE_ATTR(dimensions, std::vector<nc_dimension>)
-	HBRS_THETA_UTILS_DECLARE_ATTR(data, array)
+	HBRS_THETA_UTILS_DECLARE_ATTR(value, array)
 };
 
 HBRS_THETA_UTILS_NAMESPACE_END
@@ -70,18 +68,18 @@ HBRS_THETA_UTILS_NAMESPACE_END
 namespace boost { namespace hana {
 
 template<>
-struct tag_of< hbrs::theta_utils::nc_variable > {
-	using type = hbrs::theta_utils::nc_variable_tag;
+struct tag_of< hbrs::theta_utils::nc_attribute > {
+	using type = hbrs::theta_utils::nc_attribute_tag;
 };
 
 template <>
-struct make_impl<hbrs::theta_utils::nc_variable_tag> {
-	static hbrs::theta_utils::nc_variable
-	apply(std::string name, std::vector<hbrs::theta_utils::nc_dimension> dims, hbrs::theta_utils::nc_variable::array data) {
-		return {name, dims, data};
+struct make_impl<hbrs::theta_utils::nc_attribute_tag> {
+	static hbrs::theta_utils::nc_attribute
+	apply(std::string name, hbrs::theta_utils::nc_attribute::array value) {
+		return {name, value};
 	}
 };
 
 /* namespace hana */ } /* namespace boost */ }
 
-#endif // !HBRS_THETA_UTILS_DT_NC_VARIABLE_HPP
+#endif // !HBRS_THETA_UTILS_DT_NC_ATTRIBUTE_HPP

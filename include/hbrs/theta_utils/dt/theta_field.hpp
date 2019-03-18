@@ -87,7 +87,8 @@ public:
 		std::vector<double> z_velocity,
 		std::vector<double> pressure,
 		std::vector<double> residual,
-		std::vector<int> global_id
+		std::vector<int> global_id,
+		boost::optional<int> ndomains
 	);
 	
 	theta_field(nc_cntr cntr);
@@ -107,6 +108,7 @@ public:
 	HBRS_THETA_UTILS_DECLARE_ATTR(pressure, std::vector<double>)
 	HBRS_THETA_UTILS_DECLARE_ATTR(residual, std::vector<double>)
 	HBRS_THETA_UTILS_DECLARE_ATTR(global_id, std::vector<int>)
+	HBRS_THETA_UTILS_DECLARE_ATTR(ndomains, boost::optional<int>)
 };
 
 HBRS_THETA_UTILS_NAMESPACE_END
