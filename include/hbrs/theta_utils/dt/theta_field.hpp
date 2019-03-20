@@ -36,8 +36,8 @@ namespace fs = boost::filesystem;
 
 struct theta_field_path {
 	struct timestamp {
-		typedef std::array<int, 2> significand_t;
-		timestamp(std::array<int, 2> significand, int exponent);
+		typedef std::array<std::string, 2> significand_t;
+		timestamp(significand_t significand, std::string exponent);
 		timestamp(timestamp const&) = default;
 		timestamp(timestamp &&) = default;
 		
@@ -53,7 +53,7 @@ struct theta_field_path {
 		string() const;
 		
 		HBRS_THETA_UTILS_DECLARE_ATTR(significand, significand_t)
-		HBRS_THETA_UTILS_DECLARE_ATTR(exponent, int)
+		HBRS_THETA_UTILS_DECLARE_ATTR(exponent, std::string)
 	};
 	
 	theta_field_path(fs::path folder, std::string prefix, struct timestamp timestamp, int step, boost::optional<int> domain_num);

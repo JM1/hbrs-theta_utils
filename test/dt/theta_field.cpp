@@ -102,7 +102,10 @@ make_theta_field_paths(
 		theta_field_path path{
 			dir,
 			prefix,
-			{{static_cast<int>(j), 0}, 0} /* timestamp */,
+			{
+				{boost::lexical_cast<std::string>(j), "000"} /* significand */,
+				"00" /* exponent */
+			} /* timestamp */,
 			static_cast<int>(j) * 10 /* step */,
 			domain_num
 		};

@@ -28,6 +28,7 @@
 #include <boost/optional.hpp>
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/system/error_code.hpp>
 #include <mpi.h>
 #include <iterator>
@@ -37,7 +38,7 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace ba = boost::algorithm;
 namespace mpi = hbrs::mpl::detail::mpi;
 
-theta_field_path::timestamp::timestamp(std::array<int, 2> significand, int exponent)
+theta_field_path::timestamp::timestamp(significand_t significand, std::string exponent)
 : significand_{significand}, exponent_{exponent} {}
 
 bool
@@ -48,12 +49,16 @@ theta_field_path::timestamp::operator<(timestamp const& o) const {
 std::string
 theta_field_path::timestamp::string() const {
 	std::stringstream ss;
-	ss << significand_[0] << '.' << significand_[1] << 'e' << exponent_;
+	ss  << significand_[0]
+		<< '.'
+		<< significand_[1]
+		<< 'e' 
+		<< exponent_;
 	return ss.str();
 }
 
 HBRS_THETA_UTILS_DEFINE_ATTR(significand, theta_field_path::timestamp::significand_t, theta_field_path::timestamp)
-HBRS_THETA_UTILS_DEFINE_ATTR(exponent, int, theta_field_path::timestamp)
+HBRS_THETA_UTILS_DEFINE_ATTR(exponent, std::string, theta_field_path::timestamp)
 
 theta_field_path::theta_field_path(
 	fs::path folder,
@@ -67,9 +72,13 @@ fs::path
 theta_field_path::filename() const {
 	// filename example: karman.pval.t5_000e-02.100.domain_1
 	std::stringstream fn;
+	
+	auto timestamp = timestamp_.string();
+	boost::replace_all(timestamp, ".", "_");
+	
 	fn  << prefix_
 		<< ".pval."
-		<< (boost::format("t%d_%03de%+03d") % timestamp_.significand()[0] % timestamp_.significand()[1] % timestamp_.exponent())
+		<< "t" << timestamp
 		<< "." << step_;
 	if (domain_num_) {
 		fn << ".domain_" << *domain_num_;
@@ -197,8 +206,8 @@ parse_theta_field_path(fs::path file_path, std::string const& input_prefix) {
 	auto filename = file_path.filename().string();
 	// filename example: karman.pval.t5_000e-02.100.domain_1
 	
-	
-	int timestamp[3];
+	theta_field_path::timestamp::significand_t significand;
+	std::string exponent;
 	int step;
 	std::vector<int> domain_num;
 	
@@ -210,11 +219,11 @@ parse_theta_field_path(fs::path file_path, std::string const& input_prefix) {
 			>> qi::lit(".pval.") 
 			>> qi::char_('t') 
 			>> (
-				qi::int_[phoenix::ref(timestamp[0]) = qi::_1]
-				>> qi::char_('_') 
-				>> qi::int_[phoenix::ref(timestamp[1]) = qi::_1] 
-				>> qi::char_('e') 
-				>> qi::int_[phoenix::ref(timestamp[2]) = qi::_1]
+				*(qi::ascii::digit[phoenix::push_back(phoenix::ref(significand[0]), qi::_1)])
+				>> qi::char_('_')
+				>> *(qi::ascii::digit[phoenix::push_back(phoenix::ref(significand[1]), qi::_1)])
+				>> qi::char_('e')
+				>> *(qi::char_("-+0-9")[phoenix::push_back(phoenix::ref(exponent), qi::_1)])
 			)
 			>> qi::char_('.') 
 			>> qi::int_[phoenix::ref(step) = qi::_1]
@@ -231,7 +240,7 @@ parse_theta_field_path(fs::path file_path, std::string const& input_prefix) {
 		{ 
 			file_path.parent_path(),
 			input_prefix, 
-			{ {timestamp[0], timestamp[1]}, timestamp[2] },
+			{significand, exponent},
 			step,
 			domain_num.empty() ? boost::optional<int>{} : boost::optional<int>{ domain_num[0] }
 		}
