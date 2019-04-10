@@ -38,19 +38,22 @@ set_package_properties(Boost PROPERTIES
     TYPE REQUIRED
 )
 
-find_package(MPI)
+find_package(MPI REQUIRED)
 set_package_properties(MPI PROPERTIES
     PURPOSE "Required for distributed linear algebra algortihms."
+    TYPE REQUIRED
 )
 
-find_package(netcdf)
+find_package(netcdf REQUIRED)
 set_package_properties(netcdf PROPERTIES
     PURPOSE "Required for reading theta result files."
+    TYPE REQUIRED
 )
 
-find_package(VTK)
+find_package(VTK REQUIRED)
 set_package_properties(VTK PROPERTIES
     PURPOSE "Required for writing visualization output files."
+    TYPE REQUIRED
 )
 
 #################### source settings ####################
