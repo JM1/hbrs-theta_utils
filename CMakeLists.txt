@@ -26,7 +26,7 @@ set_package_properties(hbrs-cmake PROPERTIES
     TYPE REQUIRED
 )
 
-find_package(hbrs-mpl REQUIRED COMPONENTS elemental matlab)
+find_package(hbrs-mpl REQUIRED)
 set_package_properties(hbrs-mpl PROPERTIES
     PURPOSE "Required for linear algebra algorithms."
     TYPE REQUIRED

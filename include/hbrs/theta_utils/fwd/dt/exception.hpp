@@ -24,6 +24,7 @@
 #include <boost/exception/error_info.hpp>
 #include <boost/filesystem.hpp>
 #include <hbrs/theta_utils/fwd/fn/vtk.hpp>
+#include <hbrs/theta_utils/fwd/dt/command_option.hpp>
 #include <tuple>
 #include <string>
 
@@ -31,6 +32,7 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 namespace fs = boost::filesystem;
 
+struct invalid_backend_exception;
 struct ambiguous_domain_num_exception;
 struct domain_num_mismatch_exception;
 struct mpi_not_initialized_exception;
@@ -46,6 +48,7 @@ typedef boost::error_info<struct errinfo_domain_num_mismatch_, domain_num_mismat
 typedef boost::error_info<struct errinfo_vtk_file_format_, vtk_file_format> errinfo_vtk_file_format;
 typedef boost::error_info<struct errinfo_number_range_spec_, std::string> errinfo_number_range_spec;
 typedef boost::error_info<struct errinfo_vtk_error_, std::string> errinfo_vtk_error;
+typedef boost::error_info<struct errinfo_pca_backend_, pca_backend> errinfo_pca_backend;
 
 std::string
 to_string(errinfo_ambiguous_domain_num e);

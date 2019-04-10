@@ -21,6 +21,7 @@
 #include <hbrs/mpl/detail/mpi.hpp>
 #include <hbrs/mpl/preprocessor/core.hpp>
 #include <boost/exception/diagnostic_information.hpp>
+#include <hbrs/mpl/config.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/throw_exception.hpp>
@@ -365,11 +366,29 @@ parse_options(int argc, char *argv[]) {
 			BOOST_ASSERT(!backend.empty());
 			
 			if (boost::iequals(backend, "MATLAB_LAPACK")) {
-				cmd.pca_opts.backend = pca_backend::matlab_lapack;
+				#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
+					cmd.pca_opts.backend = pca_backend::matlab_lapack;
+				#else
+					BOOST_THROW_EXCEPTION(bpo::invalid_option_value{
+						(boost::format("pca backend %s was not enabled during build") % backend).str()
+					});
+				#endif
 			} else if (boost::iequals(backend, "ELEMENTAL_OPENMP")) {
-				cmd.pca_opts.backend = pca_backend::elemental_openmp;
+				#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+					cmd.pca_opts.backend = pca_backend::elemental_openmp;
+				#else
+					BOOST_THROW_EXCEPTION(bpo::invalid_option_value{
+						(boost::format("pca backend %s was not enabled during build") % backend).str()
+					});
+				#endif
 			} else if (boost::iequals(backend, "ELEMENTAL_MPI")) {
-				cmd.pca_opts.backend = pca_backend::elemental_mpi;
+				#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+					cmd.pca_opts.backend = pca_backend::elemental_mpi;
+				#else
+					BOOST_THROW_EXCEPTION(bpo::invalid_option_value{
+						(boost::format("pca backend %s was not enabled during build") % backend).str()
+					});
+				#endif
 			} else {
 				BOOST_THROW_EXCEPTION(bpo::invalid_option_value{
 					(boost::format("pca backend %s is unknown / not supported") % backend).str()

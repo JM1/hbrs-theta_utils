@@ -32,9 +32,16 @@
 #include <hbrs/theta_utils/dt/theta_field.hpp>
 
 #include <hbrs/mpl/dt/rtsam.hpp>
-#include <matlab/dt/matrix.hpp>
-#include <elemental/dt/matrix.hpp>
-#include <elemental/dt/dist_matrix.hpp>
+
+#include <hbrs/mpl/config.hpp>
+#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
+    #include <matlab/dt/matrix.hpp>
+#endif
+#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+    #include <elemental/dt/matrix.hpp>
+    #include <elemental/dt/dist_matrix.hpp>
+#endif
+
 #include <boost/assert.hpp>
 #include <vector>
 
@@ -64,9 +71,13 @@ size(std::vector<theta_field> const& series) {
 template<
 	typename To,
 	typename std::enable_if_t<
-		std::is_same< hana::tag_of_t<To>, mpl::rtsam_tag >::value ||
-		std::is_same< hana::tag_of_t<To>, matlab::matrix_tag >::value ||
-		std::is_same< hana::tag_of_t<To>, hana::ext::El::Matrix_tag >::value
+		#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
+			std::is_same< hana::tag_of_t<To>, matlab::matrix_tag >::value ||
+		#endif
+		#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+		std::is_same< hana::tag_of_t<To>, hana::ext::El::Matrix_tag >::value ||
+		#endif
+		std::is_same< hana::tag_of_t<To>, mpl::rtsam_tag >::value
 	>* = nullptr
 >
 decltype(auto)
@@ -103,19 +114,25 @@ copy_matrix(std::vector<theta_field> const& from, To && to) {
 	return HBRS_MPL_FWD(to);
 }
 
-decltype(auto)
-copy_matrix(std::vector<theta_field> const& from, El::DistMatrix<double, El::VC, El::STAR, El::ELEMENT> && to) {
-	El::Zero(to); // if to-matrix is larger than from-field then unused rows will just be zero.
-	auto to_local = copy_matrix(from, to.Matrix());
-	return HBRS_MPL_FWD(to);
-}
+#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+	decltype(auto)
+	copy_matrix(std::vector<theta_field> const& from, El::DistMatrix<double, El::VC, El::STAR, El::ELEMENT> && to) {
+		El::Zero(to); // if to-matrix is larger than from-field then unused rows will just be zero.
+		auto to_local = copy_matrix(from, to.Matrix());
+		return HBRS_MPL_FWD(to);
+	}
+#endif
 
 template<
 	typename From,
 	typename std::enable_if_t<
-		std::is_same< hana::tag_of_t<From>, mpl::rtsam_tag >::value ||
-		std::is_same< hana::tag_of_t<From>, matlab::matrix_tag >::value ||
-		std::is_same< hana::tag_of_t<From>, hana::ext::El::Matrix_tag >::value
+		#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
+			std::is_same< hana::tag_of_t<From>, matlab::matrix_tag >::value ||
+		#endif
+		#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+			std::is_same< hana::tag_of_t<From>, hana::ext::El::Matrix_tag >::value ||
+		#endif
+		std::is_same< hana::tag_of_t<From>, mpl::rtsam_tag >::value
 	>* = nullptr
 >
 decltype(auto)
@@ -155,11 +172,13 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 	return HBRS_MPL_FWD(to);
 }
 
-decltype(auto)
-copy_matrix(El::DistMatrix<double, El::VC, El::STAR, El::ELEMENT> const& from, std::vector<theta_field> & to) {
-	auto to_local = copy_matrix(from.LockedMatrix(), to);
-	return HBRS_MPL_FWD(to);
-}
+#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+	decltype(auto)
+	copy_matrix(El::DistMatrix<double, El::VC, El::STAR, El::ELEMENT> const& from, std::vector<theta_field> & to) {
+		auto to_local = copy_matrix(from.LockedMatrix(), to);
+		return HBRS_MPL_FWD(to);
+	}
+#endif
 
 /* namespace detail */ }
 HBRS_THETA_UTILS_NAMESPACE_END

@@ -20,6 +20,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <hbrs/mpl/config.hpp>
 #include <hbrs/mpl/fn/equal.hpp>
 #include <hbrs/mpl/fn/size.hpp>
 #include <hbrs/mpl/fn/m.hpp>
@@ -90,7 +91,18 @@ BOOST_AUTO_TEST_CASE(pca_filter_, * utf::tolerance(0.000000001)) {
 		for(auto && keep : { true, false }) {
 			BOOST_TEST_MESSAGE("keep=" << (keep ? "true" : "false"));
 			hana::for_each(
-				hana::make_tuple(matlab_lapack_backend_c, elemental_openmp_backend_c, elemental_mpi_backend_c),
+				hana::make_tuple(
+					#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
+						matlab_lapack_backend_c
+					#endif
+					#if defined(HBRS_MPL_ENABLE_ADDON_MATLAB) && defined(HBRS_MPL_ENABLE_ADDON_ELEMENTAL)
+						,
+					#endif
+					#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+						elemental_openmp_backend_c,
+						elemental_mpi_backend_c
+					#endif
+				),
 				[&dataset, &keep](auto && backend) {
 					switch(backend.value) {
 						case pca_backend::matlab_lapack:
@@ -123,16 +135,20 @@ BOOST_AUTO_TEST_CASE(pca_filter_, * utf::tolerance(0.000000001)) {
 					auto data_sz = hbrs::theta_utils::detail::size(data);
 					auto data_m = (*mpl::m)(data_sz);
 					auto data_n = (*mpl::n)(data_sz);
-					auto data2_m = boost::numeric_cast<El::Int>(data_m);
-					auto data2_n = boost::numeric_cast<El::Int>(data_n);
-					auto data2 = hbrs::theta_utils::detail::copy_matrix(data, El::Matrix<double>{data2_m,data2_n});
-					
-					if (keep) {
-						HBRS_MPL_TEST_MMEQ(dataset, data2, false);
-					} else {
-						auto mean_ = (*mpl::expand)(mpl::mean(mpl::columns(dataset)), mpl::size(dataset));
-						HBRS_MPL_TEST_MMEQ(mean_, data2, false);
-					}
+					#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+						auto data2_m = boost::numeric_cast<El::Int>(data_m);
+						auto data2_n = boost::numeric_cast<El::Int>(data_n);
+						auto data2 = hbrs::theta_utils::detail::copy_matrix(data, El::Matrix<double>{data2_m,data2_n});
+						
+						if (keep) {
+							HBRS_MPL_TEST_MMEQ(dataset, data2, false);
+						} else {
+							auto mean_ = (*mpl::expand)(mpl::mean(mpl::columns(dataset)), mpl::size(dataset));
+							HBRS_MPL_TEST_MMEQ(mean_, data2, false);
+						}
+					#else
+						//TODO: Implement test without dependency to Elemental
+					#endif
 				}
 			);
 		}
