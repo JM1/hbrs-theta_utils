@@ -54,7 +54,7 @@ make_theta_fields(mpl::rtsam<double, mpl::storage_order::row_major> const& from)
 	);
 	
 	return detail::copy_matrix(from, to);
-};
+}
 
 /* namespace detail */ }
 HBRS_THETA_UTILS_NAMESPACE_END

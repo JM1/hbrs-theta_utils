@@ -942,7 +942,7 @@ HBRS_THETA_UTILS_NAMESPACE_END
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
 vtk_path::vtk_path(fs::path folder, std::string basename, bool distributed, vtk_file_format format)
-: folder_{folder}, basename_{basename}, distributed_{distributed}, format_{format} {};
+: folder_{folder}, basename_{basename}, distributed_{distributed}, format_{format} {}
 
 std::string
 vtk_path::file_extension() const {
