@@ -361,7 +361,7 @@ write_nc_cntr(
 		}
 		BOOST_ASSERT(dimids.size() == var.dimensions().size());
 		
-		std::optional<nc_type> xtype = boost::apply_visitor(nc_type_visitor{}, var.data());
+		std::optional<nc_type> xtype = boost::apply_visitor(nc_type_visitor(), var.data());
 		if (!xtype) {
 			status = NC_EBADTYPID;
 			throw_if_error(ncid, status, path, true);
@@ -376,15 +376,15 @@ write_nc_cntr(
 	for(nc_attribute const& attr : cntr.attributes()) {
 		int gattrid;
 		
-		std::optional<nc_type> xtype = boost::apply_visitor(nc_type_visitor{}, attr.value());
+		std::optional<nc_type> xtype = boost::apply_visitor(nc_type_visitor(), attr.value());
 		if (!xtype) {
 			status = NC_EBADTYPID;
 			throw_if_error(ncid, status, path, true);
 		}
 		
 		status = nc_put_att(ncid, NC_GLOBAL, attr.name().data(), *xtype,
-			boost::apply_visitor(array_size_visitor{}, attr.value()),
-			boost::apply_visitor(array_ptr_visitor{}, attr.value())
+			boost::apply_visitor(array_size_visitor(), attr.value()),
+			boost::apply_visitor(array_ptr_visitor(), attr.value())
 		);
 		throw_if_error(ncid, status, path, true);
 	}
@@ -396,7 +396,7 @@ write_nc_cntr(
 		status = nc_put_var(
 			ncid,
 			static_cast<int>(i),
-			boost::apply_visitor(array_ptr_visitor{}, cntr.variables()[i].data())
+			boost::apply_visitor(array_ptr_visitor(), cntr.variables()[i].data())
 		);
 		throw_if_error(ncid, status, path, true);
 	}
