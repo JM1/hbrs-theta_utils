@@ -78,14 +78,18 @@ struct int_ranges_grammar : qi::grammar<Iterator, int_ranges<Integer>()> {
 			seqs.push_back(int_range<Integer>{low, high+1});
 			pass = true;
 		};
-		
 		auto parse_no = [](
-			fusion::vector<Integer> const& attr,
+			auto && attr,
 			auto & ctx, bool & pass
 		) {
 			int_ranges<Integer> & seqs = fusion::at_c<0>(ctx.attributes);
 			
-			Integer no = fusion::at_c<0>(attr);
+			Integer no;
+			if constexpr(std::is_arithmetic<std::decay_t<decltype(attr)>>::value) {
+				no = attr;
+			} else {
+				no = fusion::at_c<0>(attr);
+			}
 			seqs.push_back(int_range<Integer>{no,no+1});
 			pass = true;
 		};
