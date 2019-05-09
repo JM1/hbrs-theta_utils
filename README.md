@@ -10,15 +10,11 @@
 # docker version 18.06.0-ce or later is recommended
 docker --version
 
-# fetch and setup dockerctl
-git clone --depth 1 https://gist.github.com/ab8c3beea108ea14a6b8955050f36357.git
-export PATH="$PWD/ab8c3beea108ea14a6b8955050f36357/:$PATH"
-
 # fetch docker image
-docker pull jm1337/debian-testing-cpp-dev
+docker pull jm1337/debian-dev-hbrs:testing
 
 # log into docker container
-dockerctl run --login --systemd -- jm1337/debian-testing-cpp-dev
+docker run -ti jm1337/debian-dev-hbrs:testing
 
 
 
