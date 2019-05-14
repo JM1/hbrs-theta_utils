@@ -11,10 +11,10 @@
 docker --version
 
 # fetch docker image
-docker pull jm1337/debian-dev-hbrs:testing
+docker pull jm1337/debian-dev-hbrs:buster
 
 # log into docker container
-docker run -ti jm1337/debian-dev-hbrs:testing
+docker run -ti jm1337/debian-dev-hbrs:buster
 
 
 
