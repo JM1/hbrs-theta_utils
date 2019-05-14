@@ -69,6 +69,18 @@ execute(visualize_cmd cmd) {
 		));
 	}
 	
+	{
+		auto const& first = field_paths[0];
+		for(auto const& path : field_paths) {
+			if (path.naming_scheme() != first.naming_scheme()) {
+				BOOST_THROW_EXCEPTION((
+					ambiguous_naming_scheme_exception{}
+					<< errinfo_ambiguous_field_paths{{first.full_path(), path.full_path()}}
+				));
+			}
+		}
+	}
+	
 	convert_to_vtk(
 		*grid_path,
 		field_paths,

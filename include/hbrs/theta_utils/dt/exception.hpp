@@ -31,6 +31,7 @@ namespace mpl = hbrs::mpl;
 
 struct invalid_backend_exception : virtual mpl::exception {};
 struct ambiguous_domain_num_exception : virtual mpl::exception {};
+struct ambiguous_naming_scheme_exception : virtual mpl::exception {};
 struct domain_num_mismatch_exception : virtual mpl::exception {};
 struct mpi_not_initialized_exception : virtual mpl::exception {};
 struct unsupported_format_exception : virtual mpl::exception {};

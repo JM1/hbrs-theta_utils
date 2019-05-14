@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,18 @@ struct theta_field_path {
 		HBRS_THETA_UTILS_DECLARE_ATTR(exponent, std::string)
 	};
 	
-	theta_field_path(fs::path folder, std::string prefix, struct timestamp timestamp, int step, boost::optional<int> domain_num);
+	
+	enum class naming_scheme { theta, tau_unsteady };
+	
+	theta_field_path(
+		fs::path folder,
+		std::string prefix,
+		struct timestamp timestamp,
+		int step,
+		boost::optional<int> domain_num,
+		enum naming_scheme naming_scheme
+	);
+	
 	theta_field_path(theta_field_path const&) = default;
 	theta_field_path(theta_field_path &&) = default;
 	
@@ -76,6 +87,7 @@ struct theta_field_path {
 	HBRS_THETA_UTILS_DECLARE_ATTR(timestamp, struct timestamp)
 	HBRS_THETA_UTILS_DECLARE_ATTR(step, int)
 	HBRS_THETA_UTILS_DECLARE_ATTR(domain_num, boost::optional<int>)
+	HBRS_THETA_UTILS_DECLARE_ATTR(naming_scheme, enum naming_scheme)
 };
 
 struct theta_field {

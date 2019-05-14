@@ -144,7 +144,7 @@ write_stats(
 
 void
 decompose_with_pca(
-	std::vector<theta_field_path> const& paths,
+	std::vector<theta_field_path> paths,
 	detail::int_ranges<std::size_t> const& includes,
 	pca_backend const& backend,
 	fs::path const& output_folder,
@@ -259,6 +259,18 @@ execute(pca_cmd cmd) {
 				boost::system::errc::make_error_code(boost::system::errc::no_such_file_or_directory)
 			}
 		));
+	}
+	
+	{
+		auto const& first = paths[0];
+		for(auto const& path : paths) {
+			if (path.naming_scheme() != first.naming_scheme()) {
+				BOOST_THROW_EXCEPTION((
+					ambiguous_naming_scheme_exception{}
+					<< errinfo_ambiguous_field_paths{{first.full_path(), path.full_path()}}
+				));
+			}
+		}
 	}
 	
 	auto includes_seqs = parse_nr_sequences(cmd.pca_opts.pc_nr_seqs);

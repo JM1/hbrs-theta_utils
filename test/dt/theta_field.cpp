@@ -87,7 +87,8 @@ auto
 make_theta_field_paths(
 	fs::path const& dir,
 	std::string const& prefix,
-	std::vector<theta_field> const& field
+	std::vector<theta_field> const& field,
+	enum theta_field_path::naming_scheme scheme
 ) {
 	auto sz = detail::size(field);
 	
@@ -108,7 +109,8 @@ make_theta_field_paths(
 				"00" /* exponent */
 			} /* timestamp */,
 			static_cast<int>(j) * 10 /* step */,
-			domain_num
+			domain_num,
+			scheme
 		};
 		
 		fields.push_back(path);
@@ -253,75 +255,79 @@ using hbrs::mpl::detail::environment_fixture;
 BOOST_TEST_GLOBAL_FIXTURE(environment_fixture);
 
 BOOST_AUTO_TEST_CASE(read, * utf::precondition(mpi_world_size{{0,4}}) ) {
-	io_fixture fx{"read"};
-	
-	BOOST_TEST_MESSAGE("Working directory: " << fx.wd().path().string());
-	
-	//prepare test data
-	{
-		auto paths = make_theta_field_paths(
-			fx.wd().path(), fx.prefix(), fields0
-		);
+	for(auto scheme: { theta_field_path::naming_scheme::theta, theta_field_path::naming_scheme::tau_unsteady }) {
+		io_fixture fx{"read"};
 		
-		for(std::size_t j = 0; j < paths.size(); ++j) {
-			auto path = paths.at(j);
-			auto field = fields0_bytes.at(j);
-			auto fsz = std::distance(std::get<0>(field), std::get<1>(field));
-			BOOST_TEST_MESSAGE("Writing " << fsz << " bytes of test data to file " << path.full_path().string());
+		BOOST_TEST_MESSAGE("Working directory: " << fx.wd().path().string());
+		
+		//prepare test data
+		{
+			auto paths = make_theta_field_paths(
+				fx.wd().path(), fx.prefix(), fields0, scheme
+			);
 			
-			write_binary(path.full_path().string(), reinterpret_cast<char const*>(std::get<0>(field)), fsz);
+			for(std::size_t j = 0; j < paths.size(); ++j) {
+				auto path = paths.at(j);
+				auto field = fields0_bytes.at(j);
+				auto fsz = std::distance(std::get<0>(field), std::get<1>(field));
+				BOOST_TEST_MESSAGE("Writing " << fsz << " bytes of test data to file " << path.full_path().string());
+				
+				write_binary(path.full_path().string(), reinterpret_cast<char const*>(std::get<0>(field)), fsz);
+			}
 		}
+		
+		// read test data
+		auto paths = find_theta_fields(fx.wd().path(), fx.prefix());
+		auto got = read_theta_fields(paths);
+		
+		#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+			//compare to reference data
+			auto ref_sz = detail::size(fields0);
+			auto ref = detail::copy_matrix(fields0, El::Matrix<double>{(El::Int)ref_sz.m(),(El::Int)ref_sz.n()});
+			auto got_sz = detail::size(got);
+			auto got_ = detail::copy_matrix(got, El::Matrix<double>{(El::Int)got_sz.m(),(El::Int)got_sz.n()});
+			HBRS_MPL_TEST_MMEQ(ref, got_, false);
+		#else
+			//TODO: Implement test without dependency to Elemental
+		#endif
 	}
-	
-	// read test data
-	auto paths = find_theta_fields(fx.wd().path(), fx.prefix());
-	auto got = read_theta_fields(paths);
-	
-	#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-		//compare to reference data
-		auto ref_sz = detail::size(fields0);
-		auto ref = detail::copy_matrix(fields0, El::Matrix<double>{(El::Int)ref_sz.m(),(El::Int)ref_sz.n()});
-		auto got_sz = detail::size(got);
-		auto got_ = detail::copy_matrix(got, El::Matrix<double>{(El::Int)got_sz.m(),(El::Int)got_sz.n()});
-		HBRS_MPL_TEST_MMEQ(ref, got_, false);
-	#else
-		//TODO: Implement test without dependency to Elemental
-	#endif
 }
 
 
 BOOST_AUTO_TEST_CASE(write, * utf::precondition(mpi_world_size{{0,4}}) ) {
-	io_fixture fx{"write"};
-	BOOST_TEST_MESSAGE("Working directory: " << fx.wd().path().string());
+	for(auto scheme: { theta_field_path::naming_scheme::theta, theta_field_path::naming_scheme::tau_unsteady }) {
+		io_fixture fx{"write"};
+		BOOST_TEST_MESSAGE("Working directory: " << fx.wd().path().string());
 	
-	auto paths = make_theta_field_paths(
-		fx.wd().path(), fx.prefix(), fields0
-	);
-	
-	// write test data
-	std::vector< std::tuple<theta_field, theta_field_path> > fields;
-	fields.reserve(paths.size());
-	
-	for(std::size_t j = 0; j < paths.size(); ++j) {
-		fields.push_back({fields0.at(j), paths.at(j)});
-	}
-	write_theta_fields(fields, false);
-	
-	//compare to reference data
-	auto read_and_compare = [](ptr_range const& ref, fs::path const& got) {
-		std::ifstream got_ifs{got.string(), std::ios::binary};
-		got_ifs >> std::noskipws;
+		auto paths = make_theta_field_paths(
+			fx.wd().path(), fx.prefix(), fields0, scheme
+		);
 		
-		unsigned char const * ref_begin = std::get<0>(ref);
-		unsigned char const * ref_end = std::get<1>(ref);
-		std::istream_iterator<unsigned char> got_begin{got_ifs}, got_end;
+		// write test data
+		std::vector< std::tuple<theta_field, theta_field_path> > fields;
+		fields.reserve(paths.size());
 		
-		BOOST_CHECK_EQUAL_COLLECTIONS(ref_begin, ref_end, got_begin, got_end);
-	};
-	
-	for(std::size_t j = 0; j < paths.size(); ++j) {
-		BOOST_TEST_MESSAGE("timestep := " << j);
-		read_and_compare(fields0_bytes.at(j), std::get<1>(fields.at(j)).full_path());
+		for(std::size_t j = 0; j < paths.size(); ++j) {
+			fields.push_back({fields0.at(j), paths.at(j)});
+		}
+		write_theta_fields(fields, false);
+		
+		//compare to reference data
+		auto read_and_compare = [](ptr_range const& ref, fs::path const& got) {
+			std::ifstream got_ifs{got.string(), std::ios::binary};
+			got_ifs >> std::noskipws;
+			
+			unsigned char const * ref_begin = std::get<0>(ref);
+			unsigned char const * ref_end = std::get<1>(ref);
+			std::istream_iterator<unsigned char> got_begin{got_ifs}, got_end;
+			
+			BOOST_CHECK_EQUAL_COLLECTIONS(ref_begin, ref_end, got_begin, got_end);
+		};
+		
+		for(std::size_t j = 0; j < paths.size(); ++j) {
+			BOOST_TEST_MESSAGE("timestep := " << j);
+			read_and_compare(fields0_bytes.at(j), std::get<1>(fields.at(j)).full_path());
+		}
 	}
 }
 

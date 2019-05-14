@@ -30,6 +30,11 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/system/error_code.hpp>
+#include <boost/hana/fold.hpp>
+#include <boost/hana/tuple.hpp>
+#include <boost/hana/pair.hpp>
+#include <boost/hana/first.hpp>
+#include <boost/hana/second.hpp>
 #include <mpi.h>
 #include <iterator>
 #include <sstream>
@@ -65,23 +70,38 @@ theta_field_path::theta_field_path(
 	std::string prefix,
 	struct timestamp timestamp,
 	int step,
-	boost::optional<int> domain_num)
-: folder_{folder}, prefix_{prefix}, timestamp_{timestamp}, step_{step}, domain_num_{domain_num} {}
+	boost::optional<int> domain_num,
+	enum naming_scheme naming_scheme)
+: folder_{folder}, prefix_{prefix}, timestamp_{timestamp}, step_{step}, domain_num_{domain_num}, naming_scheme_{naming_scheme} {}
 
 fs::path
 theta_field_path::filename() const {
-	// filename example: karman.pval.t5_000e-02.100.domain_1
 	std::stringstream fn;
 	
-	auto timestamp = timestamp_.string();
-	boost::replace_all(timestamp, ".", "_");
-	
-	fn  << prefix_
-		<< ".pval."
-		<< "t" << timestamp
-		<< "." << step_;
-	if (domain_num_) {
-		fn << ".domain_" << *domain_num_;
+	if (naming_scheme_ == naming_scheme::theta) {
+		// theta_scheme example: karman.pval.t5_000e-02.100.domain_1
+		auto timestamp = timestamp_.string();
+		boost::replace_all(timestamp, ".", "_");
+		
+		fn  << prefix_
+			<< ".pval."
+			<< "t" << timestamp
+			<< "." << step_;
+		if (domain_num_) {
+			fn << ".domain_" << *domain_num_;
+		}
+	} else if (naming_scheme_ == naming_scheme::tau_unsteady) {
+		// tau_unsteady example: karman.pval.unsteady_i=13_t=6.5000e-02.domain_118
+		fn  << prefix_
+			<< ".pval.unsteady_i="
+			<< step_
+			<< "_t="
+			<< timestamp_.string();
+		if (domain_num_) {
+			fn << ".domain_" << *domain_num_;
+		}
+	} else {
+		BOOST_ASSERT(false);
 	}
 	
 	return { fn.str() };
@@ -97,6 +117,7 @@ HBRS_THETA_UTILS_DEFINE_ATTR(prefix, std::string, theta_field_path)
 HBRS_THETA_UTILS_DEFINE_ATTR(timestamp, struct theta_field_path::timestamp, theta_field_path)
 HBRS_THETA_UTILS_DEFINE_ATTR(step, int, theta_field_path)
 HBRS_THETA_UTILS_DEFINE_ATTR(domain_num, boost::optional<int>, theta_field_path)
+HBRS_THETA_UTILS_DEFINE_ATTR(naming_scheme, enum theta_field_path::naming_scheme, theta_field_path)
 
 theta_field::theta_field(
 	std::vector<double> density,
@@ -204,7 +225,6 @@ parse_theta_field_path(fs::path file_path, std::string const& input_prefix) {
 	namespace phoenix = boost::phoenix;
 	
 	auto filename = file_path.filename().string();
-	// filename example: karman.pval.t5_000e-02.100.domain_1
 	
 	theta_field_path::timestamp::significand_t significand;
 	std::string exponent;
@@ -213,36 +233,88 @@ parse_theta_field_path(fs::path file_path, std::string const& input_prefix) {
 	
 	auto begin = filename.begin();
 	auto end = filename.end();
-	bool ok = qi::parse(begin, end,
-		qi::lexeme[
-			qi::lit(input_prefix) 
-			>> qi::lit(".pval.") 
-			>> qi::char_('t') 
-			>> (
-				*(qi::ascii::digit[phoenix::push_back(phoenix::ref(significand[0]), qi::_1)])
-				>> qi::char_('_')
-				>> *(qi::ascii::digit[phoenix::push_back(phoenix::ref(significand[1]), qi::_1)])
-				>> qi::char_('e')
-				>> *(qi::char_("-+0-9")[phoenix::push_back(phoenix::ref(exponent), qi::_1)])
-			)
-			>> qi::char_('.') 
-			>> qi::int_[phoenix::ref(step) = qi::_1]
-			>> qi::repeat(0, 1)[
-				qi::lit(".domain_") >> qi::int_[phoenix::push_back(phoenix::ref(domain_num), qi::_1)]
-			]
+	
+	// example: karman.pval.t5_000e-02.100.domain_1
+	bool ok = qi::parse(begin, end, qi::lexeme[
+		qi::lit(input_prefix) 
+		>> qi::lit(".pval.") 
+		>> qi::char_('t') 
+		>> (
+			*(qi::ascii::digit[phoenix::push_back(phoenix::ref(significand[0]), qi::_1)])
+			>> qi::char_('_')
+			>> *(qi::ascii::digit[phoenix::push_back(phoenix::ref(significand[1]), qi::_1)])
+			>> qi::char_('e')
+			>> *(qi::char_("-+0-9")[phoenix::push_back(phoenix::ref(exponent), qi::_1)])
+		)
+		>> qi::char_('.') 
+		>> qi::int_[phoenix::ref(step) = qi::_1]
+		>> qi::repeat(0, 1)[
+			qi::lit(".domain_") >> qi::int_[phoenix::push_back(phoenix::ref(domain_num), qi::_1)]
 		]
-	);
+	]);
+	
 	if ((begin != end) || !ok) { 
-		return {}; 
+		return { boost::none };
 	};
 	
 	return {
-		{ 
+		{
 			file_path.parent_path(),
-			input_prefix, 
+			input_prefix,
 			{significand, exponent},
 			step,
-			domain_num.empty() ? boost::optional<int>{} : boost::optional<int>{ domain_num[0] }
+			domain_num.empty() ? boost::optional<int>{} : boost::optional<int>{ domain_num[0] },
+			theta_field_path::naming_scheme::theta
+		}
+	};
+}
+
+boost::optional<theta_field_path>
+parse_tau_field_path(fs::path file_path, std::string const& input_prefix) {
+	namespace qi = boost::spirit::qi;
+	namespace spirit = boost::spirit;
+	namespace phoenix = boost::phoenix;
+	
+	auto filename = file_path.filename().string();
+	
+	theta_field_path::timestamp::significand_t significand;
+	std::string exponent;
+	int step;
+	std::vector<int> domain_num;
+	
+	auto begin = filename.begin();
+	auto end = filename.end();
+	
+	// example: karman.pval.unsteady_i=13_t=6.5000e-02.domain_118
+	bool ok = qi::parse(begin, end, qi::lexeme[
+		qi::lit(input_prefix) 
+		>> qi::lit(".pval.unsteady_i=")
+		>> qi::int_[phoenix::ref(step) = qi::_1]
+		>> qi::lit("_t=")
+		>> (
+			*(qi::ascii::digit[phoenix::push_back(phoenix::ref(significand[0]), qi::_1)])
+			>> qi::char_('.')
+			>> *(qi::ascii::digit[phoenix::push_back(phoenix::ref(significand[1]), qi::_1)])
+			>> qi::char_('e')
+			>> *(qi::char_("-+0-9")[phoenix::push_back(phoenix::ref(exponent), qi::_1)])
+		)
+		>> qi::repeat(0, 1)[
+			qi::lit(".domain_") >> qi::int_[phoenix::push_back(phoenix::ref(domain_num), qi::_1)]
+		]
+	]);
+	
+	if ((begin != end) || !ok) { 
+		return { boost::none };
+	};
+	
+	return {
+		{
+			file_path.parent_path(),
+			input_prefix,
+			{significand, exponent},
+			step,
+			domain_num.empty() ? boost::optional<int>{} : boost::optional<int>{ domain_num[0] },
+			theta_field_path::naming_scheme::tau_unsteady
 		}
 	};
 }
@@ -260,9 +332,15 @@ find_theta_fields(
 	std::vector<theta_field_path> field_files;
 	for(auto && path : all_files) {
 		auto field_path = parse_theta_field_path(path, prefix);
+		
+		if (!field_path) {
+			field_path = parse_tau_field_path(path, prefix);
+		}
+		
 		if (!field_path) {
 			continue;
 		}
+		
 		field_files.push_back(*field_path);
 	}
 	
@@ -304,7 +382,7 @@ filter_theta_fields_by_domain_num(
 				if (path.domain_num() != first_num) {
 					BOOST_THROW_EXCEPTION((
 						ambiguous_domain_num_exception{}
-						<< errinfo_ambiguous_domain_num{{kept.front().full_path(), path.full_path()}}
+						<< errinfo_ambiguous_field_paths{{kept.front().full_path(), path.full_path()}}
 					));
 				}
 			}
