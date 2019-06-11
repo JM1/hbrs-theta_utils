@@ -14,8 +14,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
 #ifndef HBRS_THETA_UTILS_FWD_DT_THETA_GRID_HPP
 #define HBRS_THETA_UTILS_FWD_DT_THETA_GRID_HPP
 

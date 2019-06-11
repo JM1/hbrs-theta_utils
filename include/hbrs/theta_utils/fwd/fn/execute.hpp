@@ -14,8 +14,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
 #ifndef HBRS_THETA_UTILS_FWD_FN_EXECUTE_HPP
 #define HBRS_THETA_UTILS_FWD_FN_EXECUTE_HPP
 
