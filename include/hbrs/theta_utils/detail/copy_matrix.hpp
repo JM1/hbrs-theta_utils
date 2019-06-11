@@ -75,7 +75,7 @@ template<
 			std::is_same< hana::tag_of_t<To>, matlab::matrix_tag >::value ||
 		#endif
 		#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-		std::is_same< hana::tag_of_t<To>, hana::ext::El::Matrix_tag >::value ||
+			std::is_same< hana::tag_of_t<To>, elemental::matrix_tag >::value ||
 		#endif
 		std::is_same< hana::tag_of_t<To>, mpl::rtsam_tag >::value
 	>* = nullptr
@@ -116,9 +116,12 @@ copy_matrix(std::vector<theta_field> const& from, To && to) {
 
 #ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
 	decltype(auto)
-	copy_matrix(std::vector<theta_field> const& from, El::DistMatrix<double, El::VC, El::STAR, El::ELEMENT> && to) {
-		El::Zero(to); // if to-matrix is larger than from-field then unused rows will just be zero.
-		auto to_local = copy_matrix(from, to.Matrix());
+	copy_matrix(
+		std::vector<theta_field> const& from,
+		elemental::dist_matrix<double, El::VC, El::STAR, El::ELEMENT> && to
+	) {
+		El::Zero(to.data()); // if to-matrix is larger than from-field then unused rows will just be zero.
+		to.data().Matrix() = copy_matrix(from, elemental::matrix<double>(to.data().Matrix())).data();
 		return HBRS_MPL_FWD(to);
 	}
 #endif
@@ -130,7 +133,7 @@ template<
 			std::is_same< hana::tag_of_t<From>, matlab::matrix_tag >::value ||
 		#endif
 		#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-			std::is_same< hana::tag_of_t<From>, hana::ext::El::Matrix_tag >::value ||
+			std::is_same< hana::tag_of_t<From>, elemental::matrix_tag >::value ||
 		#endif
 		std::is_same< hana::tag_of_t<From>, mpl::rtsam_tag >::value
 	>* = nullptr
@@ -174,9 +177,11 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 
 #ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
 	decltype(auto)
-	copy_matrix(El::DistMatrix<double, El::VC, El::STAR, El::ELEMENT> const& from, std::vector<theta_field> & to) {
-		auto to_local = copy_matrix(from.LockedMatrix(), to);
-		return HBRS_MPL_FWD(to);
+	copy_matrix(
+		elemental::dist_matrix<double, El::VC, El::STAR, El::ELEMENT> const& from,
+		std::vector<theta_field> & to
+	) {
+		return copy_matrix(elemental::matrix<double const>(from.data().LockedMatrix()), to);
 	}
 #endif
 

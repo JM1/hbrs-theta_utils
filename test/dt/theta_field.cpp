@@ -283,9 +283,9 @@ BOOST_AUTO_TEST_CASE(read, * utf::precondition(mpi_world_size{{0,4}}) ) {
 		#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
 			//compare to reference data
 			auto ref_sz = detail::size(fields0);
-			auto ref = detail::copy_matrix(fields0, El::Matrix<double>{(El::Int)ref_sz.m(),(El::Int)ref_sz.n()});
+			auto ref = detail::copy_matrix(fields0, elemental::matrix<double>{(El::Int)ref_sz.m(),(El::Int)ref_sz.n()});
 			auto got_sz = detail::size(got);
-			auto got_ = detail::copy_matrix(got, El::Matrix<double>{(El::Int)got_sz.m(),(El::Int)got_sz.n()});
+			auto got_ = detail::copy_matrix(got, elemental::matrix<double>{(El::Int)got_sz.m(),(El::Int)got_sz.n()});
 			HBRS_MPL_TEST_MMEQ(ref, got_, false);
 		#else
 			//TODO: Implement test without dependency to Elemental

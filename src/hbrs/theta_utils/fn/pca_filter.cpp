@@ -73,14 +73,9 @@ namespace {
 #endif
 
 #ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-	template<
-		typename Matrix,
-		typename std::enable_if_t<
-			std::is_same< hana::tag_of_t<Matrix>, hana::ext::El::DistMatrix_tag>::value
-		>* = nullptr
-	>
+	template<typename Ring, El::Dist Columnwise, El::Dist Rowwise, El::DistWrap Wrapping>
 	auto
-	to_vector(elemental::dist_column_vector<Matrix> const& from) {
+	to_vector(elemental::dist_column_vector<Ring, Columnwise, Rowwise, Wrapping> const& from) {
 		auto from_local = from.data().LockedMatrix();
 		auto from_sz = from_local.Height();
 		BOOST_ASSERT(from_local.Width() == 1);
@@ -105,15 +100,14 @@ namespace {
 
 #ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
 	auto
-	make_matrix(hana::basic_type<hana::ext::El::Matrix_tag>, mpl::matrix_size<El::Int, El::Int> sz) {
+	make_matrix(hana::basic_type<elemental::matrix_tag>, mpl::matrix_size<El::Int, El::Int> sz) {
 		return elemental::make_matrix(hana::type_c<double>, sz);
 	}
 
 	auto
-	make_matrix(hana::basic_type<hana::ext::El::DistMatrix_tag>, mpl::matrix_size<El::Int, El::Int> sz) {
+	make_matrix(hana::basic_type<elemental::dist_matrix_tag>, mpl::matrix_size<El::Int, El::Int> sz) {
 		static El::Grid const grid{El::mpi::COMM_WORLD};
 		
-
 		auto min_m = El::mpi::AllReduce(sz.m(), El::mpi::MIN, grid.Comm());
 		auto max_m = El::mpi::AllReduce(sz.m(), El::mpi::MAX, grid.Comm());
 		BOOST_ASSERT(min_m <= max_m || min_m > max_m);
@@ -130,7 +124,7 @@ namespace {
 		a.Resize(full_m, sz.n());
 		
 		BOOST_ASSERT(a.Matrix().Width() == sz.n());
-		return a;
+		return elemental::make_dist_matrix(a);
 	}
 #endif
 
@@ -185,7 +179,7 @@ mpl::pca_filter_result<
 >
 pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> const& keep, elemental_openmp_backend) {
 	#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-		return pca_filter(series, keep, hana::type_c<hana::ext::El::Matrix_tag>);
+		return pca_filter(series, keep, hana::type_c<elemental::matrix_tag>);
 	#else
 		BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{elemental_openmp_backend_c});
 	#endif
@@ -197,7 +191,7 @@ mpl::pca_filter_result<
 >
 pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> const& keep, elemental_mpi_backend) {
 	#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-		return pca_filter(series, keep, hana::type_c<hana::ext::El::DistMatrix_tag>);
+		return pca_filter(series, keep, hana::type_c<elemental::dist_matrix_tag>);
 	#else
 		BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{elemental_mpi_backend_c});
 	#endif

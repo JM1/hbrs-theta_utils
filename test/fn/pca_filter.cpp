@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(pca_filter_, * utf::tolerance(0.000000001)) {
 					#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
 						auto data2_m = boost::numeric_cast<El::Int>(data_m);
 						auto data2_n = boost::numeric_cast<El::Int>(data_n);
-						auto data2 = hbrs::theta_utils::detail::copy_matrix(data, El::Matrix<double>{data2_m,data2_n});
+						auto data2 = hbrs::theta_utils::detail::copy_matrix(data, elemental::matrix<double>{data2_m,data2_n});
 						
 						if (keep) {
 							HBRS_MPL_TEST_MMEQ(dataset, data2, false);
