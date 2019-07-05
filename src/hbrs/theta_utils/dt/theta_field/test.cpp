@@ -36,11 +36,9 @@
 #include <fstream>
 #include <iterator>
 
-namespace mpl = hbrs::mpl;
 namespace mpi = hbrs::mpl::detail::mpi;
 namespace utf = boost::unit_test;
 namespace tt = boost::test_tools;
-namespace fs = boost::filesystem;
 using namespace hbrs::theta_utils;
 
 namespace {
