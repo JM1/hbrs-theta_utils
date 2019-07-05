@@ -16,10 +16,11 @@
 
 #include <hbrs/theta_utils/config.hpp>
 #include <hbrs/theta_utils/fn/execute.hpp>
+#include <hbrs/theta_utils/dt/command.hpp>
 #include <hbrs/theta_utils/dt/exception.hpp>
 #include <hbrs/mpl/detail/environment.hpp>
 #include <hbrs/mpl/detail/mpi.hpp>
-#include <hbrs/mpl/preprocessor/core.hpp>
+#include <hbrs/mpl/core/preprocessor.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 #include <hbrs/mpl/config.hpp>
 
@@ -366,7 +367,7 @@ parse_options(int argc, char *argv[]) {
 			BOOST_ASSERT(!backend.empty());
 			
 			if (boost::iequals(backend, "MATLAB_LAPACK")) {
-				#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
+				#ifdef HBRS_MPL_ENABLE_MATLAB
 					cmd.pca_opts.backend = pca_backend::matlab_lapack;
 				#else
 					BOOST_THROW_EXCEPTION(bpo::invalid_option_value{
@@ -374,7 +375,7 @@ parse_options(int argc, char *argv[]) {
 					});
 				#endif
 			} else if (boost::iequals(backend, "ELEMENTAL_OPENMP")) {
-				#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+				#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 					cmd.pca_opts.backend = pca_backend::elemental_openmp;
 				#else
 					BOOST_THROW_EXCEPTION(bpo::invalid_option_value{
@@ -382,7 +383,7 @@ parse_options(int argc, char *argv[]) {
 					});
 				#endif
 			} else if (boost::iequals(backend, "ELEMENTAL_MPI")) {
-				#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+				#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 					cmd.pca_opts.backend = pca_backend::elemental_mpi;
 				#else
 					BOOST_THROW_EXCEPTION(bpo::invalid_option_value{

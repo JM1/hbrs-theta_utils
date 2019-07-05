@@ -14,15 +14,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DT_NC_CNTR_HPP
-#define HBRS_THETA_UTILS_DT_NC_CNTR_HPP
+#ifndef HBRS_THETA_UTILS_DT_NC_CNTR_IMPL_HPP
+#define HBRS_THETA_UTILS_DT_NC_CNTR_IMPL_HPP
+
+#include "fwd.hpp"
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/theta_utils/fwd/dt/nc_cntr.hpp>
 #include <hbrs/theta_utils/dt/nc_dimension.hpp>
 #include <hbrs/theta_utils/dt/nc_variable.hpp>
 #include <hbrs/theta_utils/dt/nc_attribute.hpp>
-#include <hbrs/theta_utils/preprocessor/core.hpp>
+#include <hbrs/theta_utils/core/preprocessor.hpp>
 #include <boost/optional.hpp>
 #include <boost/hana/core.hpp>
 #include <vector>
@@ -96,4 +97,4 @@ struct make_impl<hbrs::theta_utils::nc_cntr_tag> {
 
 /* namespace hana */ } /* namespace boost */ }
 
-#endif // !HBRS_THETA_UTILS_DT_NC_CNTR_HPP
+#endif // !HBRS_THETA_UTILS_DT_NC_CNTR_IMPL_HPP

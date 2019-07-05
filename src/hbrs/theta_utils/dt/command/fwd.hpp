@@ -14,8 +14,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_FWD_DT_COMMAND_HPP
-#define HBRS_THETA_UTILS_FWD_DT_COMMAND_HPP
+#ifndef HBRS_THETA_UTILS_DT_COMMAND_FWD_HPP
+#define HBRS_THETA_UTILS_DT_COMMAND_FWD_HPP
 
 #include <hbrs/theta_utils/config.hpp>
 #include <boost/hana/fwd/core/make.hpp>
@@ -30,4 +30,4 @@ struct pca_cmd;
 
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_FWD_DT_COMMAND_HPP
+#endif // !HBRS_THETA_UTILS_DT_COMMAND_FWD_HPP

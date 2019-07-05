@@ -1,4 +1,4 @@
-/* Copyright (c) 2016 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,8 +14,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_FWD_DT_NC_EXCEPTION_HPP
-#define HBRS_THETA_UTILS_FWD_DT_NC_EXCEPTION_HPP
+#ifndef HBRS_THETA_UTILS_DT_NC_EXCEPTION_FWD_HPP
+#define HBRS_THETA_UTILS_DT_NC_EXCEPTION_FWD_HPP
 
 #include <hbrs/theta_utils/config.hpp>
 #include <boost/hana/fwd/core/make.hpp>
@@ -27,13 +27,12 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
 struct nc_exception;
-typedef boost::error_info<struct errinfo_nc_status_, int> errinfo_nc_status;
-
 struct nc_exception_tag {};
-
 constexpr auto make_nc_exception = hana::make<nc_exception_tag>;
 constexpr auto to_nc_exception = hana::to<nc_exception_tag>;
 
+typedef boost::error_info<struct errinfo_nc_status_, int> errinfo_nc_status;
+
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_FWD_DT_NC_EXCEPTION_HPP
+#endif // !HBRS_THETA_UTILS_DT_NC_EXCEPTION_FWD_HPP

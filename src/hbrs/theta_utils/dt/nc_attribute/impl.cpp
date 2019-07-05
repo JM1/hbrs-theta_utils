@@ -14,7 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <hbrs/theta_utils/dt/nc_attribute.hpp>
+#include "impl.hpp"
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 

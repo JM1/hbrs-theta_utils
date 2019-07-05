@@ -14,12 +14,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_HPP
-#define HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_HPP
+#ifndef HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_IMPL_HPP
+#define HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_IMPL_HPP
+
+#include "fwd.hpp"
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/mpl/preprocessor/core.hpp>
+#include <hbrs/mpl/core/preprocessor.hpp>
+
 #include <hbrs/mpl/dt/matrix_size.hpp>
+#include <hbrs/mpl/dt/rtsam.hpp>
+
 #include <hbrs/mpl/fn/size.hpp>
 #include <hbrs/mpl/fn/at.hpp>
 #include <hbrs/mpl/fn/m.hpp>
@@ -29,15 +34,13 @@
 #include <hbrs/mpl/fn/greater_equal.hpp>
 #include <hbrs/theta_utils/dt/theta_field.hpp>
 
-#include <hbrs/mpl/dt/rtsam.hpp>
-
 #include <hbrs/mpl/config.hpp>
-#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
-    #include <matlab/dt/matrix.hpp>
+#ifdef HBRS_MPL_ENABLE_MATLAB
+    #include <hbrs/mpl/dt/ml_matrix.hpp>
 #endif
-#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-    #include <elemental/dt/matrix.hpp>
-    #include <elemental/dt/dist_matrix.hpp>
+#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+    #include <hbrs/mpl/dt/el_matrix.hpp>
+    #include <hbrs/mpl/dt/el_dist_matrix.hpp>
 #endif
 
 #include <boost/assert.hpp>
@@ -49,31 +52,16 @@ namespace mpl = hbrs::mpl;
 namespace detail {
 
 mpl::matrix_size<std::size_t, std::size_t>
-size(std::vector<theta_field> const& series) {
-	BOOST_ASSERT(series.size() > 0);
-	std::size_t xv_sz = series[0].x_velocity().size();
-	std::size_t yv_sz = series[0].y_velocity().size();
-	std::size_t zv_sz = series[0].z_velocity().size();
-	BOOST_ASSERT(xv_sz == yv_sz);
-	BOOST_ASSERT(xv_sz == zv_sz);
-	
-	std::size_t m = xv_sz + yv_sz + zv_sz;
-	std::size_t n = series.size();
-	
-	BOOST_ASSERT(m > 0);
-	BOOST_ASSERT(n > 0);
-	
-	return {m,n};
-}
+size(std::vector<theta_field> const& series);
 
 template<
 	typename To,
 	typename std::enable_if_t<
-		#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
-			std::is_same< hana::tag_of_t<To>, matlab::matrix_tag >::value ||
+		#ifdef HBRS_MPL_ENABLE_MATLAB
+			std::is_same< hana::tag_of_t<To>, mpl::ml_matrix_tag >::value ||
 		#endif
-		#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-			std::is_same< hana::tag_of_t<To>, elemental::matrix_tag >::value ||
+		#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+			std::is_same< hana::tag_of_t<To>, mpl::el_matrix_tag >::value ||
 		#endif
 		std::is_same< hana::tag_of_t<To>, mpl::rtsam_tag >::value
 	>* = nullptr
@@ -112,14 +100,14 @@ copy_matrix(std::vector<theta_field> const& from, To && to) {
 	return HBRS_MPL_FWD(to);
 }
 
-#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-	decltype(auto)
+#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+	inline decltype(auto)
 	copy_matrix(
 		std::vector<theta_field> const& from,
-		elemental::dist_matrix<double, El::VC, El::STAR, El::ELEMENT> && to
+		hbrs::mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT> && to
 	) {
 		El::Zero(to.data()); // if to-matrix is larger than from-field then unused rows will just be zero.
-		to.data().Matrix() = copy_matrix(from, elemental::matrix<double>(to.data().Matrix())).data();
+		to.data().Matrix() = copy_matrix(from, hbrs::mpl::el_matrix<double>(to.data().Matrix())).data();
 		return HBRS_MPL_FWD(to);
 	}
 #endif
@@ -127,11 +115,11 @@ copy_matrix(std::vector<theta_field> const& from, To && to) {
 template<
 	typename From,
 	typename std::enable_if_t<
-		#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
-			std::is_same< hana::tag_of_t<From>, matlab::matrix_tag >::value ||
+		#ifdef HBRS_MPL_ENABLE_MATLAB
+			std::is_same< hana::tag_of_t<From>, mpl::ml_matrix_tag >::value ||
 		#endif
-		#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-			std::is_same< hana::tag_of_t<From>, elemental::matrix_tag >::value ||
+		#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+			std::is_same< hana::tag_of_t<From>, mpl::el_matrix_tag >::value ||
 		#endif
 		std::is_same< hana::tag_of_t<From>, mpl::rtsam_tag >::value
 	>* = nullptr
@@ -173,18 +161,17 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 	return HBRS_MPL_FWD(to);
 }
 
-#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-	decltype(auto)
+#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+	inline decltype(auto)
 	copy_matrix(
-		elemental::dist_matrix<double, El::VC, El::STAR, El::ELEMENT> const& from,
+		hbrs::mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT> const& from,
 		std::vector<theta_field> & to
 	) {
-		return copy_matrix(elemental::matrix<double const>(from.data().LockedMatrix()), to);
+		return copy_matrix(hbrs::mpl::el_matrix<double const>(from.data().LockedMatrix()), to);
 	}
 #endif
 
 /* namespace detail */ }
 HBRS_THETA_UTILS_NAMESPACE_END
 
-
-#endif // !HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_HPP
+#endif // !HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_IMPL_HPP

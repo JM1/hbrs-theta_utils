@@ -14,13 +14,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DT_THETA_FIELD_HPP
-#define HBRS_THETA_UTILS_DT_THETA_FIELD_HPP
+#ifndef HBRS_THETA_UTILS_DT_THETA_FIELD_IMPL_HPP
+#define HBRS_THETA_UTILS_DT_THETA_FIELD_IMPL_HPP
+
+#include "fwd.hpp"
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/theta_utils/fwd/dt/theta_field.hpp>
 #include <hbrs/theta_utils/dt/nc_cntr.hpp>
-#include <hbrs/theta_utils/preprocessor/core.hpp>
+#include <hbrs/theta_utils/core/preprocessor.hpp>
 #include <boost/hana/core.hpp>
 #include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
@@ -140,4 +141,4 @@ struct make_impl<hbrs::theta_utils::theta_field_tag> {
 
 /* namespace hana */ } /* namespace boost */ }
 
-#endif // !HBRS_THETA_UTILS_DT_THETA_FIELD_HPP
+#endif // !HBRS_THETA_UTILS_DT_THETA_FIELD_IMPL_HPP

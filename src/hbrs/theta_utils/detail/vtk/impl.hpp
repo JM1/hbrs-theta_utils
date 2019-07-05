@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_FN_VTK_HPP
-#define HBRS_THETA_UTILS_FN_VTK_HPP
+#ifndef HBRS_THETA_UTILS_DETAIL_VTK_IMPL_HPP
+#define HBRS_THETA_UTILS_DETAIL_VTK_IMPL_HPP
 
-#include <hbrs/theta_utils/fwd/fn/vtk.hpp>
-#include <hbrs/theta_utils/config.hpp>
-#include <hbrs/theta_utils/preprocessor/core.hpp>
-#include <boost/filesystem.hpp>
-#include <string>
+#include "fwd.hpp"
+
+#include <hbrs/theta_utils/core/preprocessor.hpp>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
@@ -57,4 +55,4 @@ struct vtk_path {
 
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_FN_VTK_HPP
+#endif // !HBRS_THETA_UTILS_DETAIL_VTK_IMPL_HPP

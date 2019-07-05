@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,6 +51,8 @@ BOOST_AUTO_TEST_SUITE(pca_filter_test)
 using hbrs::mpl::detail::environment_fixture;
 BOOST_TEST_GLOBAL_FIXTURE(environment_fixture);
 
+//TODO: Make pca_filter test from hbrs::mpl generic and then use it here!
+
 BOOST_AUTO_TEST_CASE(pca_filter_, * utf::tolerance(0.000000001)) {
 	using namespace hbrs::theta_utils;
 	
@@ -92,13 +94,13 @@ BOOST_AUTO_TEST_CASE(pca_filter_, * utf::tolerance(0.000000001)) {
 			BOOST_TEST_MESSAGE("keep=" << (keep ? "true" : "false"));
 			hana::for_each(
 				hana::make_tuple(
-					#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
+					#ifdef HBRS_MPL_ENABLE_MATLAB
 						matlab_lapack_backend_c
 					#endif
-					#if defined(HBRS_MPL_ENABLE_ADDON_MATLAB) && defined(HBRS_MPL_ENABLE_ADDON_ELEMENTAL)
+					#if defined(HBRS_MPL_ENABLE_MATLAB) && defined(HBRS_MPL_ENABLE_ELEMENTAL)
 						,
 					#endif
-					#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+					#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 						elemental_openmp_backend_c,
 						elemental_mpi_backend_c
 					#endif
@@ -135,10 +137,10 @@ BOOST_AUTO_TEST_CASE(pca_filter_, * utf::tolerance(0.000000001)) {
 					auto data_sz = hbrs::theta_utils::detail::size(data);
 					auto data_m = (*mpl::m)(data_sz);
 					auto data_n = (*mpl::n)(data_sz);
-					#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+					#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 						auto data2_m = boost::numeric_cast<El::Int>(data_m);
 						auto data2_n = boost::numeric_cast<El::Int>(data_n);
-						auto data2 = hbrs::theta_utils::detail::copy_matrix(data, elemental::matrix<double>{data2_m,data2_n});
+						auto data2 = hbrs::theta_utils::detail::copy_matrix(data, mpl::el_matrix<double>{data2_m,data2_n});
 						
 						if (keep) {
 							HBRS_MPL_TEST_MMEQ(dataset, data2, false);

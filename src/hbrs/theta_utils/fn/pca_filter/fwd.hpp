@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,20 +14,22 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_FWD_FN_PCA_FILTER_HPP
-#define HBRS_THETA_UTILS_FWD_FN_PCA_FILTER_HPP
+#ifndef HBRS_THETA_UTILS_FN_PCA_FILTER_FWD_HPP
+#define HBRS_THETA_UTILS_FN_PCA_FILTER_FWD_HPP
 
 #include <hbrs/theta_utils/config.hpp>
 
-#include <hbrs/mpl/fwd/dt/pca_filter_result.hpp>
-#include <hbrs/theta_utils/fwd/dt/command_option.hpp>
+#include <hbrs/mpl/dt/pca_filter_result/fwd.hpp>
 #include <hbrs/theta_utils/detail/int_ranges.hpp>
-#include <hbrs/theta_utils/fwd/dt/theta_field.hpp>
+#include <hbrs/theta_utils/dt/command_option/fwd.hpp>
+#include <hbrs/theta_utils/dt/theta_field/fwd.hpp>
 #include <vector>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 namespace mpl = hbrs::mpl;
+
+//TODO: Make pca_filter() a generic function using HBRS_MPL_DEC_F1 macros!
 
 mpl::pca_filter_result<
 	std::vector<theta_field> /* data */,
@@ -49,4 +51,4 @@ pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> cons
 
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_FWD_FN_PCA_FILTER_HPP
+#endif // !HBRS_THETA_UTILS_FN_PCA_FILTER_FWD_HPP

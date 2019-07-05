@@ -14,10 +14,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DT_COMMAND_HPP
-#define HBRS_THETA_UTILS_DT_COMMAND_HPP
+#ifndef HBRS_THETA_UTILS_DT_COMMAND_IMPL_HPP
+#define HBRS_THETA_UTILS_DT_COMMAND_IMPL_HPP
 
-#include <hbrs/theta_utils/fwd/dt/command.hpp>
+#include "fwd.hpp"
+
 #include <hbrs/theta_utils/dt/command_option.hpp>
 #include <string>
 
@@ -49,4 +50,4 @@ struct pca_cmd {
 
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_DT_COMMAND_HPP
+#endif // !HBRS_THETA_UTILS_DT_COMMAND_IMPL_HPP

@@ -1,4 +1,4 @@
-/* Copyright (c) 2016 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,12 +14,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DT_NC_DIMENSION_HPP
-#define HBRS_THETA_UTILS_DT_NC_DIMENSION_HPP
+#ifndef HBRS_THETA_UTILS_DT_NC_DIMENSION_IMPL_HPP
+#define HBRS_THETA_UTILS_DT_NC_DIMENSION_IMPL_HPP
+
+#include "fwd.hpp"
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/theta_utils/fwd/dt/nc_dimension.hpp>
-#include <hbrs/theta_utils/preprocessor/core.hpp>
+#include <hbrs/theta_utils/core/preprocessor.hpp>
 #include <boost/hana/core.hpp>
 
 #include <string>
@@ -72,4 +73,4 @@ struct make_impl<hbrs::theta_utils::nc_dimension_tag> {
 
 /* namespace hana */ } /* namespace boost */ }
 
-#endif // !HBRS_THETA_UTILS_DT_NC_DIMENSION_HPP
+#endif // !HBRS_THETA_UTILS_DT_NC_DIMENSION_IMPL_HPP

@@ -14,12 +14,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DT_NC_ATTRIBUTE_HPP
-#define HBRS_THETA_UTILS_DT_NC_ATTRIBUTE_HPP
+#ifndef HBRS_THETA_UTILS_DT_NC_ATTRIBUTE_IMPL_HPP
+#define HBRS_THETA_UTILS_DT_NC_ATTRIBUTE_IMPL_HPP
+
+#include "fwd.hpp"
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/theta_utils/fwd/dt/nc_attribute.hpp>
-#include <hbrs/theta_utils/preprocessor/core.hpp>
+#include <hbrs/theta_utils/core/preprocessor.hpp>
 #include <boost/hana/core.hpp>
 #include <vector>
 #include <string>
@@ -80,4 +81,4 @@ struct make_impl<hbrs::theta_utils::nc_attribute_tag> {
 
 /* namespace hana */ } /* namespace boost */ }
 
-#endif // !HBRS_THETA_UTILS_DT_NC_ATTRIBUTE_HPP
+#endif // !HBRS_THETA_UTILS_DT_NC_ATTRIBUTE_IMPL_HPP

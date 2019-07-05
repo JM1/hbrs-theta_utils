@@ -14,11 +14,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DT_THETA_VIEW_HPP
-#define HBRS_THETA_UTILS_DT_THETA_VIEW_HPP
+#ifndef HBRS_THETA_UTILS_DT_THETA_VIEW_IMPL_HPP
+#define HBRS_THETA_UTILS_DT_THETA_VIEW_IMPL_HPP
+
+#include "fwd.hpp"
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/theta_utils/fwd/dt/theta_view.hpp>
 #include <hbrs/mpl/dt/rtsav.hpp>
 
 #include <boost/assert.hpp>
@@ -174,4 +175,4 @@ struct make_impl<hbrs::theta_utils::theta_view_tag> {
 
 /* namespace hana */ } /* namespace boost */ }
 
-#endif // !HBRS_THETA_UTILS_DT_THETA_VIEW_HPP
+#endif // !HBRS_THETA_UTILS_DT_THETA_VIEW_IMPL_HPP

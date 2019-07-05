@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DT_THETA_GRID_HPP
-#define HBRS_THETA_UTILS_DT_THETA_GRID_HPP
+#ifndef HBRS_THETA_UTILS_DT_THETA_GRID_IMPL_HPP
+#define HBRS_THETA_UTILS_DT_THETA_GRID_IMPL_HPP
+
+#include "fwd.hpp"
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/mpl/preprocessor/core.hpp>
-#include <hbrs/theta_utils/fwd/dt/theta_grid.hpp>
+#include <hbrs/mpl/core/preprocessor.hpp>
 #include <hbrs/theta_utils/dt/nc_cntr.hpp>
-#include <hbrs/theta_utils/preprocessor/core.hpp>
+#include <hbrs/theta_utils/core/preprocessor.hpp>
 #include <boost/hana/core.hpp>
 #include <boost/optional.hpp>
 #include <vector>
@@ -140,4 +141,4 @@ struct make_impl<hbrs::theta_utils::theta_grid_tag> {
 
 /* namespace hana */ } /* namespace boost */ }
 
-#endif // !HBRS_THETA_UTILS_DT_THETA_GRID_HPP
+#endif // !HBRS_THETA_UTILS_DT_THETA_GRID_IMPL_HPP

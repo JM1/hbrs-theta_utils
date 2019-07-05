@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2018-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -280,12 +280,12 @@ BOOST_AUTO_TEST_CASE(read, * utf::precondition(mpi_world_size{{0,4}}) ) {
 		auto paths = find_theta_fields(fx.wd().path(), fx.prefix());
 		auto got = read_theta_fields(paths);
 		
-		#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+		#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 			//compare to reference data
 			auto ref_sz = detail::size(fields0);
-			auto ref = detail::copy_matrix(fields0, elemental::matrix<double>{(El::Int)ref_sz.m(),(El::Int)ref_sz.n()});
+			auto ref = detail::copy_matrix(fields0, mpl::el_matrix<double>{(El::Int)ref_sz.m(),(El::Int)ref_sz.n()});
 			auto got_sz = detail::size(got);
-			auto got_ = detail::copy_matrix(got, elemental::matrix<double>{(El::Int)got_sz.m(),(El::Int)got_sz.n()});
+			auto got_ = detail::copy_matrix(got, mpl::el_matrix<double>{(El::Int)got_sz.m(),(El::Int)got_sz.n()});
 			HBRS_MPL_TEST_MMEQ(ref, got_, false);
 		#else
 			//TODO: Implement test without dependency to Elemental

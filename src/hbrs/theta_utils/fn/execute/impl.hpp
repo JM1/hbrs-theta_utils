@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,10 +14,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_FN_EXECUTE_HPP
-#define HBRS_THETA_UTILS_FN_EXECUTE_HPP
+#ifndef HBRS_THETA_UTILS_FN_EXECUTE_IMPL_HPP
+#define HBRS_THETA_UTILS_FN_EXECUTE_IMPL_HPP
 
-#include <hbrs/theta_utils/fwd/fn/execute.hpp>
-#include <hbrs/theta_utils/dt/command.hpp>
+#include "fwd.hpp"
 
-#endif // !HBRS_THETA_UTILS_FN_EXECUTE_HPP
+#endif // !HBRS_THETA_UTILS_FN_EXECUTE_IMPL_HPP

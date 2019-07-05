@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,24 +14,28 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <hbrs/theta_utils/fn/pca_filter.hpp>
+#include "impl.hpp"
+
+#include <hbrs/mpl/dt/pca_filter_result.hpp>
+#include <hbrs/theta_utils/dt/command_option.hpp>
+#include <hbrs/theta_utils/dt/theta_field.hpp>
+#include <hbrs/theta_utils/dt/exception.hpp>
 #include <hbrs/theta_utils/detail/copy_matrix.hpp>
+
 #include <hbrs/mpl/fn/pca_filter.hpp>
 #include <hbrs/mpl/fn/equal.hpp>
 #include <hbrs/mpl/fn/size.hpp>
 #include <hbrs/mpl/fn/m.hpp>
 #include <hbrs/mpl/fn/n.hpp>
 #include <hbrs/mpl/detail/mpi.hpp>
-#include <hbrs/theta_utils/dt/theta_field.hpp>
-#include <hbrs/theta_utils/dt/exception.hpp>
 
 #include <hbrs/mpl/config.hpp>
-#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
-    #include <matlab/dt/matrix.hpp>
+#ifdef HBRS_MPL_ENABLE_MATLAB
+    #include <hbrs/mpl/dt/ml_matrix.hpp>
 #endif
-#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-    #include <elemental/dt/matrix.hpp>
-    #include <elemental/dt/dist_matrix.hpp>
+#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+    #include <hbrs/mpl/dt/el_matrix.hpp>
+    #include <hbrs/mpl/dt/el_dist_matrix.hpp>
 #endif
 
 #include <vector>
@@ -45,15 +49,15 @@ namespace mpi = hbrs::mpl::detail::mpi;
 
 namespace {
 
-#if defined(HBRS_MPL_ENABLE_ADDON_MATLAB) || defined(HBRS_MPL_ENABLE_ADDON_ELEMENTAL)
+#if defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL)
 	template<
 		typename From,
 		typename std::enable_if_t<
-			#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
-				std::is_same< hana::tag_of_t<From>, matlab::column_vector_tag >::value ||
+			#ifdef HBRS_MPL_ENABLE_MATLAB
+				std::is_same< hana::tag_of_t<From>, mpl::ml_column_vector_tag >::value ||
 			#endif
-			#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-				std::is_same< hana::tag_of_t<From>, elemental::column_vector_tag >::value ||
+			#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+				std::is_same< hana::tag_of_t<From>, mpl::el_column_vector_tag >::value ||
 			#endif
 			false
 		>* = nullptr
@@ -72,10 +76,10 @@ namespace {
 	}
 #endif
 
-#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 	template<typename Ring, El::Dist Columnwise, El::Dist Rowwise, El::DistWrap Wrapping>
 	auto
-	to_vector(elemental::dist_column_vector<Ring, Columnwise, Rowwise, Wrapping> const& from) {
+	to_vector(mpl::el_dist_column_vector<Ring, Columnwise, Rowwise, Wrapping> const& from) {
 		auto from_local = from.data().LockedMatrix();
 		auto from_sz = from_local.Height();
 		BOOST_ASSERT(from_local.Width() == 1);
@@ -91,21 +95,21 @@ namespace {
 	}
 #endif
 
-#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
+#ifdef HBRS_MPL_ENABLE_MATLAB
 	auto
-	make_matrix(hana::basic_type<matlab::matrix_tag>, mpl::matrix_size<int, int> sz) {
-		return matlab::make_matrix(hana::type_c<double>, sz);
+	make_matrix(hana::basic_type<mpl::ml_matrix_tag>, mpl::matrix_size<int, int> sz) {
+		return mpl::make_ml_matrix(hana::type_c<double>, sz);
 	}
 #endif
 
-#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
+#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 	auto
-	make_matrix(hana::basic_type<elemental::matrix_tag>, mpl::matrix_size<El::Int, El::Int> sz) {
-		return elemental::make_matrix(hana::type_c<double>, sz);
+	make_matrix(hana::basic_type<mpl::el_matrix_tag>, mpl::matrix_size<El::Int, El::Int> sz) {
+		return mpl::make_el_matrix(hana::type_c<double>, sz);
 	}
 
 	auto
-	make_matrix(hana::basic_type<elemental::dist_matrix_tag>, mpl::matrix_size<El::Int, El::Int> sz) {
+	make_matrix(hana::basic_type<mpl::el_dist_matrix_tag>, mpl::matrix_size<El::Int, El::Int> sz) {
 		static El::Grid const grid{El::mpi::COMM_WORLD};
 		
 		auto min_m = El::mpi::AllReduce(sz.m(), El::mpi::MIN, grid.Comm());
@@ -124,7 +128,7 @@ namespace {
 		a.Resize(full_m, sz.n());
 		
 		BOOST_ASSERT(a.Matrix().Width() == sz.n());
-		return elemental::make_dist_matrix(a);
+		return mpl::make_el_dist_matrix(a);
 	}
 #endif
 
@@ -166,8 +170,8 @@ mpl::pca_filter_result<
 	std::vector<double> /* latent*/
 >
 pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> const& keep, matlab_lapack_backend) {
-	#ifdef HBRS_MPL_ENABLE_ADDON_MATLAB
-		return pca_filter(series, keep, hana::type_c<matlab::matrix_tag>);
+	#ifdef HBRS_MPL_ENABLE_MATLAB
+		return pca_filter(series, keep, hana::type_c<mpl::ml_matrix_tag>);
 	#else
 		BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{matlab_lapack_backend_c});
 	#endif
@@ -178,8 +182,8 @@ mpl::pca_filter_result<
 	std::vector<double> /* latent*/
 >
 pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> const& keep, elemental_openmp_backend) {
-	#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-		return pca_filter(series, keep, hana::type_c<elemental::matrix_tag>);
+	#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+		return pca_filter(series, keep, hana::type_c<mpl::el_matrix_tag>);
 	#else
 		BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{elemental_openmp_backend_c});
 	#endif
@@ -190,8 +194,8 @@ mpl::pca_filter_result<
 	std::vector<double> /* latent*/
 >
 pca_filter(std::vector<theta_field> series, detail::int_ranges<std::size_t> const& keep, elemental_mpi_backend) {
-	#ifdef HBRS_MPL_ENABLE_ADDON_ELEMENTAL
-		return pca_filter(series, keep, hana::type_c<elemental::dist_matrix_tag>);
+	#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+		return pca_filter(series, keep, hana::type_c<mpl::el_dist_matrix_tag>);
 	#else
 		BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{elemental_mpi_backend_c});
 	#endif

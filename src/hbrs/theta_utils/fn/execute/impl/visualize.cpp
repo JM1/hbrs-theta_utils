@@ -14,12 +14,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <hbrs/theta_utils/fn/execute.hpp>
+#include "../impl.hpp"
 
+#include <hbrs/theta_utils/dt/command.hpp>
 #include <hbrs/mpl/detail/mpi.hpp>
 #include <hbrs/theta_utils/dt/theta_field.hpp>
 #include <hbrs/theta_utils/dt/theta_grid.hpp>
-#include <hbrs/theta_utils/fn/vtk.hpp>
+#include <hbrs/theta_utils/detail/vtk.hpp>
 #include <boost/filesystem.hpp>
 
 #include <hbrs/theta_utils/dt/exception.hpp>

@@ -14,8 +14,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DETAIL_INT_RANGES_HPP
-#define HBRS_THETA_UTILS_DETAIL_INT_RANGES_HPP
+#ifndef HBRS_THETA_UTILS_DETAIL_INT_RANGES_IMPL_HPP
+#define HBRS_THETA_UTILS_DETAIL_INT_RANGES_IMPL_HPP
+
+#include "fwd.hpp"
 
 #include <hbrs/theta_utils/config.hpp>
 #include <boost/spirit/include/qi.hpp>
@@ -125,4 +127,4 @@ in_int_ranges(int_ranges<Integer> const& s, Integer const& val) {
 /* namespace detail */ }
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_DETAIL_INT_RANGES_HPP
+#endif // !HBRS_THETA_UTILS_DETAIL_INT_RANGES_IMPL_HPP

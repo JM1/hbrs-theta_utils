@@ -14,11 +14,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_HPP
-#define HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_HPP
+#ifndef HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_IMPL_HPP
+#define HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_IMPL_HPP
+
+#include "fwd.hpp"
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/mpl/preprocessor/core.hpp>
+#include <hbrs/mpl/core/preprocessor.hpp>
 
 #include <hbrs/theta_utils/dt/theta_field.hpp>
 #include <hbrs/theta_utils/detail/copy_matrix.hpp>
@@ -57,4 +59,4 @@ make_theta_fields(mpl::rtsam<double, mpl::storage_order::row_major> const& from)
 /* namespace detail */ }
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_HPP
+#endif // !HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_IMPL_HPP

@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,13 +14,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DT_EXCEPTION_HPP
-#define HBRS_THETA_UTILS_DT_EXCEPTION_HPP
+#ifndef HBRS_THETA_UTILS_DT_EXCEPTION_IMPL_HPP
+#define HBRS_THETA_UTILS_DT_EXCEPTION_IMPL_HPP
+
+#include "fwd.hpp"
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/theta_utils/fwd/dt/exception.hpp>
 #include <hbrs/mpl/dt/exception.hpp>
-#include <hbrs/theta_utils/preprocessor/core.hpp>
+#include <hbrs/theta_utils/core/preprocessor.hpp>
 #include <boost/hana/core.hpp>
 #include <boost/optional.hpp>
 
@@ -48,4 +49,4 @@ struct domain_num_mismatch_error_info {
 
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_DT_EXCEPTION_HPP
+#endif // !HBRS_THETA_UTILS_DT_EXCEPTION_IMPL_HPP

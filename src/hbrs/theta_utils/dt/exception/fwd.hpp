@@ -1,4 +1,4 @@
-/* Copyright (c) 2016 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,15 +14,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_FWD_DT_EXCEPTION_HPP
-#define HBRS_THETA_UTILS_FWD_DT_EXCEPTION_HPP
+#ifndef HBRS_THETA_UTILS_DT_EXCEPTION_FWD_HPP
+#define HBRS_THETA_UTILS_DT_EXCEPTION_FWD_HPP
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/mpl/fwd/dt/exception.hpp>
+#include <hbrs/mpl/dt/exception/fwd.hpp>
 #include <boost/exception/error_info.hpp>
 #include <boost/filesystem.hpp>
-#include <hbrs/theta_utils/fwd/fn/vtk.hpp>
-#include <hbrs/theta_utils/fwd/dt/command_option.hpp>
+#include <hbrs/theta_utils/detail/vtk/fwd.hpp>
+#include <hbrs/theta_utils/dt/command_option/fwd.hpp>
 #include <tuple>
 #include <string>
 
@@ -54,4 +54,4 @@ to_string(errinfo_ambiguous_field_paths e);
 
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_FWD_DT_EXCEPTION_HPP
+#endif // !HBRS_THETA_UTILS_DT_EXCEPTION_FWD_HPP

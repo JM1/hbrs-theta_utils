@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,8 +14,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_PP_CORE_HPP
-#define HBRS_THETA_UTILS_PP_CORE_HPP
+#ifndef HBRS_THETA_UTILS_CORE_PREPROCESSOR_FWD_HPP
+#define HBRS_THETA_UTILS_CORE_PREPROCESSOR_FWD_HPP
 
 #define HBRS_THETA_UTILS_DECLARE_ATTR(__name, __type)                                                                  \
 public:                                                                                                                \
@@ -31,4 +31,4 @@ private:                                                                        
 	__type &&     __class::__name() &&      { return std::forward<__type>(__class::__name ## _); }
 
 
-#endif // !HBRS_THETA_UTILS_PP_CORE_HPP
+#endif // !HBRS_THETA_UTILS_CORE_PREPROCESSOR_FWD_HPP
