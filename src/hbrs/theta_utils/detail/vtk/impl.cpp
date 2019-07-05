@@ -842,7 +842,6 @@ write_vtk_xml_binary_parallel(vtkSmartPointer<vtkUnstructuredGrid> grid, char co
 
 	vtkNew<vtkXMLPUnstructuredGridWriter> wtr;
 	
-	wtr->SetController(ctrl);
 	wtr->SetNumberOfPieces(mpi::size());
 	wtr->SetStartPiece(mpi::rank());
 	wtr->SetEndPiece(mpi::rank());
