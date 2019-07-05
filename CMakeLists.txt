@@ -156,7 +156,7 @@ add_custom_target(tests ${_TESTS_MAYBE_ALL} COMMENT "Build all tests.")
 include(DevTools)
 function(hbrs_theta_utils_add_test target)
     add_executable(${target} EXCLUDE_FROM_ALL "${ARGN}")
-    target_link_libraries(${target} hbrs_mpl ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} hbrs_theta_utils)
+    target_link_libraries(${target} hbrs_theta_utils ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
     target_include_directories(${target}
         SYSTEM
         PUBLIC ${Boost_INCLUDE_DIRS})

@@ -48,11 +48,11 @@ set_target_properties(hbrs_theta_utils PROPERTIES
     COMPILE_FLAGS "${netcdf_CFLAGS}"
     LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
-target_link_libraries(hbrs_theta_utils
+target_link_libraries(hbrs_theta_utils PUBLIC
+    ${MPI_CXX_LIBRARIES}
     ${Boost_LIBRARIES}
     ${netcdf_LIBRARIES}
     ${VTK_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
     hbrs-mpl::hbrs_mpl)
 
 include(GenerateExportHeader)
