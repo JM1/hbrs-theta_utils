@@ -120,7 +120,8 @@ before_script:
     git clone --depth 1 https://github.com/JM1/hbrs-mpl.git &&
     cd hbrs-mpl &&
     mkdir build && cd build/ &&
-    export CXXFLAGS="-I${INSTALL_PREFIX}/include" &&
+    export CXXFLAGS="'-I${INSTALL_PREFIX}/include'" &&
+    export LIBRARY_PATH="${INSTALL_PREFIX}/lib" &&
     cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}" \
       -DMPI_C_COMPILER=/usr/bin/mpicc.mpich -DMPI_CXX_COMPILER=/usr/bin/mpicxx.mpich \
       -DHBRS_MPL_ENABLE_TESTS=OFF -DHBRS_MPL_ENABLE_BENCHMARKS=OFF -DHBRS_MPL_ENABLE_ELEMENTAL=OFF -DHBRS_MPL_ENABLE_MATLAB=OFF .. &&
@@ -132,7 +133,8 @@ script:
   - ccache -s
   - >
     mkdir build && cd build &&
-    export CXXFLAGS="-I${INSTALL_PREFIX}/include" &&
+    export CXXFLAGS="'-I${INSTALL_PREFIX}/include'" &&
+    export LIBRARY_PATH="${INSTALL_PREFIX}/lib" &&
     (
       cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}" \
         -DMPI_C_COMPILER=/usr/bin/mpicc.mpich -DMPI_CXX_COMPILER=/usr/bin/mpicxx.mpich \
