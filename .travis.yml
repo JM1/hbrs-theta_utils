@@ -87,6 +87,9 @@ install:
       sudo patch /usr/lib/cmake/vtk-6.0/GenerateExportHeader.cmake
   # Fix "make[2]: *** No rule to make target `/usr/lib/libpq.so', needed by `...'.  Stop."
   - sudo ln -s /usr/lib/x86_64-linux-gnu/libpq.so /usr/lib/libpq.so
+  # Force CMake to pick up MPICH and not OpenMPI headers.
+  # OpenMPI is required by Boost::MPI and thus cannot be removed.
+  - sudo update-alternatives --set mpi /usr/include/mpich
 
 before_script:
   # ccache symlinks are created in "before_script:" section because they are lost after "install:" section
