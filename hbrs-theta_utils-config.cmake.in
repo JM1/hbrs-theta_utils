@@ -15,11 +15,12 @@ check_required_components(hbrs-theta_utils)
 
 # NOTE: Keep list of dependencies in sync with packages in CMakeLists.txt!
 include(CMakeFindDependencyMacro)
+# NOTE: hbrs-cmake is only used during build
 #if(@hbrs-cmake_FOUND@)
 #    find_dependency(hbrs-cmake REQUIRED)
 #endif()
 if(@hbrs-mpl_FOUND@)
-    find_dependency(hbrs-mpl REQUIRED COMPONENTS elemental matlab)
+    find_dependency(hbrs-mpl REQUIRED)
 endif()
 if(@Boost_FOUND@)
     find_dependency(Boost 1.62 REQUIRED COMPONENTS unit_test_framework system thread serialization chrono program_options filesystem iostreams regex exception signals)

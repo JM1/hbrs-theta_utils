@@ -1,10 +1,10 @@
-# Copyright (c) 2018 Jakob Meng, <jakobmeng@web.de>
+# Copyright (c) 2018-2019 Jakob Meng, <jakobmeng@web.de>
 #
 # Redistribution and use is allowed according to the terms of the BSD license.
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 #
 
-cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 #################### project settings ####################
 
@@ -14,47 +14,43 @@ include(FeatureSummary)
 
 #################### options ####################
 
-option(HBRS_THETA_UTILS_ENABLE_TESTS "Build unit tests." ON)
+option(HBRS_THETA_UTILS_ENABLE_TESTS "Build unit tests." OFF)
 
 #################### find all used packages ####################
 
 # NOTE: Keep list of packages in sync with dependencies in *-cmake.in!
 
-find_package(hbrs-cmake REQUIRED)
+find_package(hbrs-cmake)
 set_package_properties(hbrs-cmake PROPERTIES
     PURPOSE "Required for CMake modules."
-    TYPE REQUIRED
-)
+    TYPE REQUIRED)
 
-find_package(hbrs-mpl REQUIRED)
+find_package(hbrs-mpl)
 set_package_properties(hbrs-mpl PROPERTIES
     PURPOSE "Required for linear algebra algorithms."
-    TYPE REQUIRED
-)
+    TYPE REQUIRED)
 
-find_package(Boost 1.62 REQUIRED COMPONENTS unit_test_framework system thread serialization chrono program_options filesystem iostreams regex exception signals)
+find_package(Boost 1.62 COMPONENTS unit_test_framework system thread serialization chrono program_options filesystem iostreams regex exception signals)
 set_package_properties(Boost PROPERTIES
     PURPOSE "Required for meta programming, unit tests and others."
-    TYPE REQUIRED
-)
+    TYPE REQUIRED)
 
-find_package(MPI REQUIRED)
+find_package(MPI)
 set_package_properties(MPI PROPERTIES
     PURPOSE "Required for distributed linear algebra algortihms."
-    TYPE REQUIRED
-)
+    TYPE REQUIRED)
 
-find_package(netcdf REQUIRED)
+find_package(netcdf)
 set_package_properties(netcdf PROPERTIES
     PURPOSE "Required for reading theta result files."
-    TYPE REQUIRED
-)
+    TYPE REQUIRED)
 
-find_package(VTK REQUIRED)
+find_package(VTK)
 set_package_properties(VTK PROPERTIES
     PURPOSE "Required for writing visualization output files."
-    TYPE REQUIRED
-)
+    TYPE REQUIRED)
+
+feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKAGES)
 
 #################### source settings ####################
 
@@ -66,6 +62,11 @@ if(VTK_FOUND)
     include(${VTK_USE_FILE})
 endif()
 
+set(CXX_TEMPLATE_DEPTH 250            CACHE STRING "Set the maximum instantiation depth for template classes to n (-ftemplate-depth=n).") # increased depth is required by operators.hpp
+set(CXX_TEMPLATE_BACKTRACE_LIMIT 250  CACHE STRING "Set the maximum number of template instantiation notes for a single warning or error to n (-ftemplate-backtrace-limit=n).")
+set(CXX_ERROR_LIMIT 0                 CACHE STRING "Limits the maximum number of error messages to n (-fmax-errors=n / -ferror-limit=n).")
+set(CXX_CONSTEXPR_BACKTRACE_LIMIT 250 CACHE STRING "-fconstexpr-backtrace-limit=n")
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -73,8 +74,6 @@ set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-# C++14 is required e.g. because of decltype(auto) as return type and constexpr std::forward_as_tuple()!
-# C++17 is required for constexpr lambdas
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -90,10 +89,6 @@ endif()
 
 #################### build settings ####################
 
-if (netcdf_FOUND)
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${netcdf_CFLAGS}")
-endif()
-
 include(MaybeAddFlags)
 maybe_add_c_flag  (HBRS_THETA_UTILS_HAS_C_WALL                         "-Wall")
 maybe_add_cxx_flag(HBRS_THETA_UTILS_HAS_CXX_WALL                       "-Wall")
@@ -105,6 +100,28 @@ maybe_add_c_flag  (HBRS_THETA_UTILS_HAS_C_WERROR_RETURN_TYPE           "-Werror=
 maybe_add_cxx_flag(HBRS_THETA_UTILS_HAS_CXX_WERROR_RETURN_TYPE         "-Werror=return-type")
 maybe_add_c_flag  (HBRS_THETA_UTILS_HAS_C_PEDANTIC_ERRORS              "-pedantic-errors")
 maybe_add_cxx_flag(HBRS_THETA_UTILS_HAS_CXX_PEDANTIC_ERRORS            "-pedantic-errors")
+
+maybe_add_cxx_flag(HBRS_THETA_UTILS_HAS_CXX_FTEMPLATE_DEPTH            "-ftemplate-depth=${CXX_TEMPLATE_DEPTH}")
+maybe_add_cxx_flag(HBRS_THETA_UTILS_HAS_CXX_FTEMPLATE_BACKTRACE_LIMIT  "-ftemplate-backtrace-limit=${CXX_TEMPLATE_BACKTRACE_LIMIT}")
+maybe_add_cxx_flag(HBRS_THETA_UTILS_HAS_CXX_FCONSTEXPR_BACKTRACE_LIMIT "-fconstexpr-backtrace-limit=${CXX_CONSTEXPR_BACKTRACE_LIMIT}")
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    maybe_add_cxx_flag(HBRS_THETA_UTILS_HAS_CXX_FERROR_LIMIT           "-ferror-limit=${CXX_ERROR_LIMIT}")
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    maybe_add_cxx_flag(HBRS_THETA_UTILS_HAS_CXX_FMAX_ERRORS            "-fmax-errors=${CXX_ERROR_LIMIT}")
+endif()
+
+if(NOT HBRS_THETA_UTILS_HAS_CXX_FTEMPLATE_DEPTH)
+    message(FATAL_ERROR "Your C++ compiler ${CMAKE_CXX_COMPILER} does not support '-ftemplate-depth=${CXX_TEMPLATE_DEPTH}', use it at your own risk.")
+endif()
+
+if(NOT HBRS_THETA_UTILS_HAS_CXX_FTEMPLATE_BACKTRACE_LIMIT)
+    message(WARNING "Your C++ compiler ${CMAKE_CXX_COMPILER} does not support '-ftemplate-backtrace-limit=${CXX_TEMPLATE_BACKTRACE_LIMIT}', use it at your own risk.")
+endif()
+
+if(NOT HBRS_THETA_UTILS_HAS_CXX_FCONSTEXPR_BACKTRACE_LIMIT)
+    message(WARNING "Your C++ compiler ${CMAKE_CXX_COMPILER} does not support '-fconstexpr-backtrace-limit=${CXX_CONSTEXPR_BACKTRACE_LIMIT}', use it at your own risk.")
+endif()
 
 #################### install settings ####################
 
@@ -125,11 +142,32 @@ set(HBRS_THETA_UTILS_INSTALL_TARGETS_DEFAULT_DESTINATIONS
     PRIVATE_HEADER DESTINATION "${HBRS_THETA_UTILS_INSTALL_INCLUDEDIR}"
     INCLUDES DESTINATION "${HBRS_THETA_UTILS_INSTALL_INCLUDEDIR}")
 
+
+#################### tests ####################
+
+# CMake's target test does not build but only executes tests
+# Ref.: https://stackoverflow.com/a/736838/6490710
+if(HBRS_THETA_UTILS_ENABLE_TESTS)
+   set(_TESTS_MAYBE_ALL ALL)
+endif()
+
+add_custom_target(tests ${_TESTS_MAYBE_ALL} COMMENT "Build all tests.")
+
+include(DevTools)
+function(hbrs_theta_utils_add_test target)
+    add_executable(${target} EXCLUDE_FROM_ALL "${ARGN}")
+    target_link_libraries(${target} hbrs_mpl ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} hbrs_theta_utils)
+    target_include_directories(${target}
+        SYSTEM
+        PUBLIC ${Boost_INCLUDE_DIRS})
+
+    add_test(${target} ${CMAKE_CURRENT_BINARY_DIR}/${target})
+    add_dependencies(tests ${target})
+endfunction()
+
 #################### list the subdirectories ####################
 
-add_subdirectory(include)
 add_subdirectory(src)
-add_subdirectory(test)
 
 #################### install files ####################
 

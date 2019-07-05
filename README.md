@@ -24,7 +24,7 @@ docker run -ti jm1337/debian-dev-hbrs:buster
 git clone --depth 1 https://github.com/JM1/hbrs-cmake.git
 cd hbrs-cmake
 mkdir build && cd build/
-cmake -DHBRS_CMAKE_ENABLE_TESTS=OFF ..
+cmake ..
 make -j$(nproc)
 sudo make install
 cd ../../
@@ -32,7 +32,7 @@ cd ../../
 git clone --depth 1 https://github.com/JM1/hbrs-mpl.git
 cd hbrs-mpl
 mkdir build && cd build/
-cmake -DHBRS_MPL_ENABLE_TESTS=OFF -DHBRS_MPL_ENABLE_ADDON_ELEMENTAL=ON -DHBRS_MPL_ENABLE_ADDON_MATLAB=OFF ..
+cmake -DHBRS_MPL_ENABLE_TESTS=OFF -DHBRS_MPL_ENABLE_BENCHMARKS=OFF -DHBRS_MPL_ENABLE_ADDON_ELEMENTAL=ON -DHBRS_MPL_ENABLE_ADDON_MATLAB=OFF ..
 make -j$(nproc)
 sudo make install
 cd ../../
