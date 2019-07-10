@@ -85,6 +85,10 @@ install:
   - >
     curl -s "https://gist.githubusercontent.com/JM1/c5adad1a1e9266e934e3fec6fd72149f/raw/f644041810c25e1d72f22d2b0aa71c16bb253da9/vtk-6.0_GenerateExportHeader.cmake.patch" |
       sudo patch /usr/lib/cmake/vtk-6.0/GenerateExportHeader.cmake
+  # Fix linker errors with VTK-6.0 and MPICH
+  - >
+    curl -s "https://gist.githubusercontent.com/JM1/ccf093b23accf910effc49560de49a30/raw/f17305e7ec9c98a8ec795a0dfda8b5bdbfcdb23c/vtk-6.0_vtkParallelMPI.cmake.patch" |
+    sudo patch /usr/lib/cmake/vtk-6.0/Modules/vtkParallelMPI.cmake
   # Fix "make[2]: *** No rule to make target `/usr/lib/libpq.so', needed by `...'.  Stop."
   - sudo ln -s /usr/lib/x86_64-linux-gnu/libpq.so /usr/lib/libpq.so
   # Force CMake to pick up MPICH and not OpenMPI headers.
