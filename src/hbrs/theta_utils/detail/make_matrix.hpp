@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,9 +14,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_FN_PCA_FILTER_IMPL_HPP
-#define HBRS_THETA_UTILS_FN_PCA_FILTER_IMPL_HPP
+#ifndef HBRS_THETA_UTILS_DETAIL_MAKE_MATRIX_HPP
+#define HBRS_THETA_UTILS_DETAIL_MAKE_MATRIX_HPP
 
-#include "fwd.hpp"
+#include "make_matrix/fwd.hpp"
+#include "make_matrix/impl.hpp"
 
-#endif // !HBRS_THETA_UTILS_FN_PCA_FILTER_IMPL_HPP
+#endif // !HBRS_THETA_UTILS_DETAIL_MAKE_MATRIX_HPP

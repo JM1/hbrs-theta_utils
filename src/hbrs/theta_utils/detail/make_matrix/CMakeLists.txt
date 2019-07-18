@@ -4,11 +4,6 @@
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 #
 
-#################### build ####################
-
-target_sources(hbrs_theta_utils PRIVATE
-    impl.cpp)
-
 #################### tests ####################
 
-hbrs_theta_utils_add_test(fn_pca_filter "test.cpp")
+hbrs_theta_utils_add_test(detail_make_matrix "test.cpp")

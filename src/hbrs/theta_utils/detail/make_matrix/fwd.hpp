@@ -14,10 +14,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_FN_PCA_FILTER_HPP
-#define HBRS_THETA_UTILS_FN_PCA_FILTER_HPP
+#ifndef HBRS_THETA_UTILS_DETAIL_MAKE_MATRIX_FWD_HPP
+#define HBRS_THETA_UTILS_DETAIL_MAKE_MATRIX_FWD_HPP
 
-#include "pca_filter/fwd.hpp"
-#include "pca_filter/impl.hpp"
+//BLANK
 
-#endif // !HBRS_THETA_UTILS_FN_PCA_FILTER_HPP
+#endif // !HBRS_THETA_UTILS_DETAIL_MAKE_MATRIX_FWD_HPP

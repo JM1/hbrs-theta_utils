@@ -7,4 +7,3 @@
 #################### list the subdirectories ####################
 
 add_subdirectory(execute)
-add_subdirectory(pca_filter)
