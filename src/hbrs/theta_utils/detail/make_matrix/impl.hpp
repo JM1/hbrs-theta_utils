@@ -62,7 +62,7 @@ namespace detail {
 	>
 	auto
 	to_vector(From const& from) {
-		auto from_sz = (*mpl::size)(from);
+		auto from_sz = (unsigned)(*mpl::size)(from);
 		std::vector<double> to(from_sz);
 		BOOST_ASSERT(to.size() == from_sz);
 		
@@ -79,7 +79,7 @@ namespace detail {
 	auto
 	to_vector(mpl::el_dist_column_vector<Ring, Columnwise, Rowwise, Wrapping> const& from) {
 		auto from_local = from.data().LockedMatrix();
-		auto from_sz = from_local.Height();
+		auto from_sz = (unsigned)from_local.Height();
 		BOOST_ASSERT(from_local.Width() == 1);
 		
 		std::vector<double> to(from_sz);
