@@ -23,6 +23,7 @@
 #include <hbrs/theta_utils/detail/int_ranges.hpp>
 #include <hbrs/theta_utils/detail/make_matrix.hpp>
 #include <hbrs/mpl/dt/pca_filter_result.hpp>
+#include <hbrs/mpl/dt/pca_control.hpp>
 
 #include <hbrs/mpl/fn/pca_filter.hpp>
 #include <hbrs/mpl/fn/size.hpp>
@@ -150,7 +151,7 @@ write_stats(
 // 	return std::make_tuple(unzipped1, unzipped2);
 // }
 
-#if defined(HBRS_MPL_ENABLE_MATLAB) && defined(HBRS_MPL_ENABLE_ELEMENTAL)
+#if defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL)
 	template<typename ToTag>
 	auto
 	convert_to(std::vector<theta_field> const& series, hana::basic_type<ToTag>) {
@@ -159,6 +160,18 @@ write_stats(
 		auto n = (*mpl::n)(sz);
 		
 		return detail::copy_matrix(series, detail::make_matrix(hana::type_c<ToTag>, {m, n}));
+	}
+
+	template<typename From, typename To>
+	mpl::pca_filter_result<
+		std::vector<theta_field> /* data */,
+		std::vector<double> /* latent*/
+	>
+	convert_from(From from, To && to) {
+		return {
+			detail::copy_matrix(from.data(), to),
+			detail::to_vector(from.latent())
+		};
 	}
 #endif
 
@@ -219,21 +232,14 @@ decompose_with_pca(
 		return detail::in_int_ranges(includes, i); 
 	};
 	
-	#if defined(HBRS_MPL_ENABLE_MATLAB) && defined(HBRS_MPL_ENABLE_ELEMENTAL)
-		auto convert_from = [&series](auto reduced)
-			-> mpl::pca_filter_result< std::vector<theta_field> /* data */, std::vector<double> /* latent*/ > {
-			return {
-				detail::copy_matrix(reduced.data(), series),
-				detail::to_vector(reduced.latent())
-			};
-		};
-	#endif
+	mpl::pca_control<bool,bool> ctrl {true /* economy */, false /* center */};
 	
 	switch (backend) {
 		case pca_backend::matlab_lapack:
 			#ifdef HBRS_MPL_ENABLE_MATLAB
 				reduced = convert_from(
-					mpl::pca_filter(convert_to(series, hana::type_c<mpl::ml_matrix_tag>), keep)
+					mpl::pca_filter(convert_to(series, hana::type_c<mpl::ml_matrix_tag>), keep, ctrl),
+					series
 				);
 			#else
 				BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{matlab_lapack_backend_c});
@@ -242,7 +248,8 @@ decompose_with_pca(
 		case pca_backend::elemental_openmp:
 			#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 				reduced = convert_from(
-					mpl::pca_filter(convert_to(series, hana::type_c<mpl::el_matrix_tag>), keep)
+					mpl::pca_filter(convert_to(series, hana::type_c<mpl::el_matrix_tag>), keep, ctrl),
+					series
 				);
 			#else
 				BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{elemental_openmp_backend_c});
@@ -251,7 +258,8 @@ decompose_with_pca(
 		case pca_backend::elemental_mpi:
 			#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 				reduced = convert_from(
-					mpl::pca_filter(convert_to(series, hana::type_c<mpl::el_dist_matrix_tag>), keep)
+					mpl::pca_filter(convert_to(series, hana::type_c<mpl::el_dist_matrix_tag>), keep, ctrl),
+					series
 				);
 			#else
 				BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{elemental_mpi_backend_c});
