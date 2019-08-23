@@ -173,6 +173,20 @@ write_stats(
 			detail::to_vector(from.latent())
 		};
 	}
+	
+	template<typename From, typename ToTag>
+	decltype(auto)
+	reduce(
+		From && from,
+		hana::basic_type<ToTag>,
+		std::function<bool(std::size_t)> keep,
+		mpl::pca_control<bool,bool> ctrl
+	) {
+		return convert_from(
+			mpl::pca_filter(convert_to(from, hana::type_c<ToTag>), keep, ctrl),
+			from
+		);
+	}
 #endif
 
 void
@@ -237,30 +251,21 @@ decompose_with_pca(
 	switch (backend) {
 		case pca_backend::matlab_lapack:
 			#ifdef HBRS_MPL_ENABLE_MATLAB
-				reduced = convert_from(
-					mpl::pca_filter(convert_to(series, hana::type_c<mpl::ml_matrix_tag>), keep, ctrl),
-					series
-				);
+				reduced = reduce(series, hana::type_c<mpl::ml_matrix_tag>, keep, ctrl);
 			#else
 				BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{matlab_lapack_backend_c});
 			#endif
 			break;
 		case pca_backend::elemental_openmp:
 			#ifdef HBRS_MPL_ENABLE_ELEMENTAL
-				reduced = convert_from(
-					mpl::pca_filter(convert_to(series, hana::type_c<mpl::el_matrix_tag>), keep, ctrl),
-					series
-				);
+				reduced = reduce(series, hana::type_c<mpl::el_matrix_tag>, keep, ctrl);
 			#else
 				BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{elemental_openmp_backend_c});
 			#endif
 			break;
 		case pca_backend::elemental_mpi:
 			#ifdef HBRS_MPL_ENABLE_ELEMENTAL
-				reduced = convert_from(
-					mpl::pca_filter(convert_to(series, hana::type_c<mpl::el_dist_matrix_tag>), keep, ctrl),
-					series
-				);
+				reduced = reduce(series, hana::type_c<mpl::el_dist_matrix_tag>, keep, ctrl);
 			#else
 				BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{elemental_mpi_backend_c});
 			#endif
