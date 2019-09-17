@@ -174,17 +174,38 @@ write_stats(
 		};
 	}
 	
-	template<typename From, typename ToTag>
+	template<typename Matrix>
 	decltype(auto)
 	reduce(
-		From && from,
+		Matrix && data,
+		std::function<bool(std::size_t)> keep,
+		mpl::pca_control<bool,bool,bool> ctrl
+	) {
+		// NOTE: in our data matrix, rows correspond to variables and columns correspond to observations,
+		//       but in pca it is vice versa.
+		decltype(auto) r = mpl::pca_filter(mpl::transpose(HBRS_MPL_FWD(data)), keep, ctrl);
+		
+		return mpl::make_pca_filter_result(
+			mpl::transpose(HBRS_MPL_FWD(r).data()),
+			HBRS_MPL_FWD(r).latent()
+		);
+	}
+	
+	template<typename ToTag>
+	decltype(auto)
+	reduce(
+		std::vector<theta_field> series,
 		hana::basic_type<ToTag>,
 		std::function<bool(std::size_t)> keep,
-		mpl::pca_control<bool,bool> ctrl
+		mpl::pca_control<bool,bool,bool> ctrl
 	) {
 		return convert_from(
-			mpl::pca_filter(convert_to(from, hana::type_c<ToTag>), keep, ctrl),
-			from
+			reduce(
+				convert_to(series, hana::type_c<ToTag>), 
+				keep, 
+				ctrl
+			),
+			series
 		);
 	}
 #endif
@@ -246,26 +267,27 @@ decompose_with_pca(
 		return detail::in_int_ranges(includes, i); 
 	};
 	
-	mpl::pca_control<bool,bool> ctrl {true /* economy */, false /* center */};
+	//TODO: Enable user to choose values of 'center' and 'normalize'
+	mpl::pca_control<bool,bool,bool> ctrl {true /* economy */, true /* center */, true /* normalize */};
 	
 	switch (backend) {
 		case pca_backend::matlab_lapack:
 			#ifdef HBRS_MPL_ENABLE_MATLAB
-				reduced = reduce(series, hana::type_c<mpl::ml_matrix_tag>, keep, ctrl);
+				reduced = reduce(std::move(series), hana::type_c<mpl::ml_matrix_tag>, keep, ctrl);
 			#else
 				BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{matlab_lapack_backend_c});
 			#endif
 			break;
 		case pca_backend::elemental_openmp:
 			#ifdef HBRS_MPL_ENABLE_ELEMENTAL
-				reduced = reduce(series, hana::type_c<mpl::el_matrix_tag>, keep, ctrl);
+				reduced = reduce(std::move(series), hana::type_c<mpl::el_matrix_tag>, keep, ctrl);
 			#else
 				BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{elemental_openmp_backend_c});
 			#endif
 			break;
 		case pca_backend::elemental_mpi:
 			#ifdef HBRS_MPL_ENABLE_ELEMENTAL
-				reduced = reduce(series, hana::type_c<mpl::el_dist_matrix_tag>, keep, ctrl);
+				reduced = reduce(std::move(series), hana::type_c<mpl::el_dist_matrix_tag>, keep, ctrl);
 			#else
 				BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{elemental_mpi_backend_c});
 			#endif
