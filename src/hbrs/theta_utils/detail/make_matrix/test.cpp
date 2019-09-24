@@ -117,12 +117,9 @@ BOOST_AUTO_TEST_CASE(make_matrix_, * utf::tolerance(0.000000001)) {
 				}
 				
 				auto sz_ = hbrs::theta_utils::detail::size(series);
-				auto m_ = (*mpl::m)(sz_);
-				auto n_ = (*mpl::n)(sz_);
-				
 				auto r = hbrs::theta_utils::detail::copy_matrix(
 					series,
-					hbrs::theta_utils::detail::make_matrix(tag, {m_, n_})
+					hbrs::theta_utils::detail::make_matrix(tag, sz_)
 				);
 				
 				HBRS_MPL_TEST_MMEQ(dataset, r, false);

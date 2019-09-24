@@ -155,11 +155,10 @@ write_stats(
 	template<typename ToTag>
 	auto
 	convert_to(std::vector<theta_field> const& series, hana::basic_type<ToTag>) {
-		auto sz = detail::size(series);
-		auto m = (*mpl::m)(sz);
-		auto n = (*mpl::n)(sz);
-		
-		return detail::copy_matrix(series, detail::make_matrix(hana::type_c<ToTag>, {m, n}));
+		return detail::copy_matrix(
+			series,
+			detail::make_matrix(hana::type_c<ToTag>, detail::size(series))
+		);
 	}
 
 	template<typename From, typename To>
