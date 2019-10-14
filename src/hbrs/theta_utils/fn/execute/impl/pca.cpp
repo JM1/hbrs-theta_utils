@@ -214,6 +214,8 @@ decompose_with_pca(
 	std::vector<theta_field_path> paths,
 	detail::int_ranges<std::size_t> const& includes,
 	pca_backend const& backend,
+	bool center,
+	bool normalize,
 	fs::path const& output_folder,
 	std::string const& output_prefix,
 	std::string const& output_tag,
@@ -266,8 +268,7 @@ decompose_with_pca(
 		return detail::in_int_ranges(includes, i); 
 	};
 	
-	//TODO: Enable user to choose values of 'center' and 'normalize'
-	mpl::pca_control<bool,bool,bool> ctrl {true /* economy */, true /* center */, true /* normalize */};
+	mpl::pca_control<bool,bool,bool> ctrl {true /* economy */, center, normalize};
 	
 	switch (backend) {
 		case pca_backend::matlab_lapack:
@@ -368,6 +369,8 @@ execute(pca_cmd cmd) {
 			paths,
 			HBRS_MPL_FWD(includes),
 			cmd.pca_opts.backend,
+			cmd.pca_opts.center,
+			cmd.pca_opts.normalize,
 			{ cmd.o_opts.path },
 			cmd.o_opts.prefix,
 			HBRS_MPL_FWD(tag),

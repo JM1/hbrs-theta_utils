@@ -52,6 +52,8 @@ struct visualize_options {
 struct pca_options {
 	std::vector<std::string> pc_nr_seqs;
 	pca_backend backend;
+	bool center;
+	bool normalize;
 };
 
 HBRS_THETA_UTILS_NAMESPACE_END

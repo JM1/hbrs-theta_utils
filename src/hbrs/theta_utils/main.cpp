@@ -335,7 +335,16 @@ parse_options(int argc, char *argv[]) {
 				"pcs",
 				bpo::value< std::vector<std::string> >()->multitoken()->value_name("SELECTIONS"),
 				"include only principal components within SELECTIONS, e.g. \"0\", \"0,1,2\", \"0-2,6-8\", \"first\" (equal to \"0\") or \"last\". Multiple listings are possible."
-			);
+			)
+			(
+				"center",
+				"subtract variable means before computing singular value decomposition"
+			)
+			(
+				"normalize",
+				"divide each variable (more precisely: all observations of a variable) by its standard deviation"
+			)
+			;
 		
 		bpo::parsed_options unreg_parsed = bpo::command_line_parser(unreg_opts).options(cmd_options).run();
 		bpo::store(unreg_parsed, vm);
@@ -408,6 +417,9 @@ parse_options(int argc, char *argv[]) {
 		if (vm.count("pcs")) {
 			cmd.pca_opts.pc_nr_seqs = vm["pcs"].as< std::vector<std::string> >();
 		}
+		
+		cmd.pca_opts.center = (vm.count("center") > 0);
+		cmd.pca_opts.normalize = (vm.count("normalize") > 0);
 		
 		return cmd;
 	}
