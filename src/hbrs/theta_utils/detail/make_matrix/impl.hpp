@@ -35,6 +35,7 @@
     #include <hbrs/mpl/dt/el_dist_matrix.hpp>
 #endif
 
+#include <boost/numeric/conversion/cast.hpp>
 #include <boost/hana/core/tag_of.hpp>
 
 #include <type_traits>
@@ -62,12 +63,13 @@ namespace detail {
 	>
 	auto
 	to_vector(From const& from) {
-		auto from_sz = (unsigned)(*mpl::size)(from);
-		std::vector<double> to(from_sz);
+		std::size_t from_sz = boost::numeric_cast<std::size_t>((*mpl::size)(from));
+		std::vector<double> to;
+		to.reserve(from_sz);
 		BOOST_ASSERT(to.size() == from_sz);
 		
 		for (std::size_t i = 0; i < from_sz; ++i) {
-			to[i] = (*mpl::at)(from, i);
+			to.at(i) = boost::numeric_cast<double>((*mpl::at)(from, i));
 		}
 		
 		return to;
@@ -78,15 +80,21 @@ namespace detail {
 	template<typename Ring, El::Dist Columnwise, El::Dist Rowwise, El::DistWrap Wrapping>
 	auto
 	to_vector(mpl::el_dist_column_vector<Ring, Columnwise, Rowwise, Wrapping> const& from) {
-		auto from_local = from.data().LockedMatrix();
-		auto from_sz = (unsigned)from_local.Height();
-		BOOST_ASSERT(from_local.Width() == 1);
+		typedef std::decay_t<Ring> _Ring_;
 		
-		std::vector<double> to(from_sz);
+		El::DistMatrixReadProxy<Ring, _Ring_, El::STAR, El::STAR, Wrapping> from_pxy = {from.data()};
+		
+		auto from_local = from_pxy.GetLocked();
+		std::size_t from_sz = boost::numeric_cast<std::size_t>(from_local.Height());
+		BOOST_ASSERT(from_local.Width() == 1);
+		BOOST_ASSERT(from_local.Height() == from.data().Height());
+		
+		std::vector<double> to;
+		to.reserve(from_sz);
 		BOOST_ASSERT(to.size() == from_sz);
 		
 		for (std::size_t i = 0; i < from_sz; ++i) {
-			to[i] = from_local.Get(i, 0);
+			to.at(i) = boost::numeric_cast<double>(from_local.Get(i, 0));
 		}
 		
 		return to;
