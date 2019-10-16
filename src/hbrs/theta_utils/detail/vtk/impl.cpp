@@ -52,7 +52,7 @@ write_vtk_legacy_ascii(theta_grid const& grid, theta_field const& field, std::os
 	for(int i = 0; i < grid.no_of_ ## __var ## s(); ++i) {                                                             \
 		out << boost::format("%i") % std::tuple_size<theta_grid::__var>::value;                                        \
 		for (std::size_t j = 0; j < std::tuple_size<theta_grid::__var>::value; ++j) {                                  \
-			out << boost::format(" %i") % grid.points_of_ ## __var ## s()[i][j];                                       \
+			out << boost::format(" %i") % grid.points_of_ ## __var ## s()[(unsigned)i][(unsigned)j];                   \
 		}                                                                                                              \
 		out << '\n';                                                                                                   \
 	}
@@ -173,6 +173,7 @@ HBRS_THETA_UTILS_NAMESPACE_END
 #include <hbrs/mpl/detail/mpi.hpp>
 #include <hbrs/theta_utils/dt/exception.hpp>
 #include <boost/throw_exception.hpp>
+#include <boost/numeric/conversion/cast.hpp>
 #include <iostream>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
@@ -205,8 +206,8 @@ vtkSmartPointer<vtkUnstructuredGrid>
 make_vtk_unstructured_grid(theta_grid const& grid, theta_field const& field) {
 	static constexpr auto INVALID_ID = std::numeric_limits<std::size_t>::max();
 	
-	auto const mpi_size = mpi::size();
-	auto const mpi_rank = mpi::rank();
+	std::size_t const mpi_size = boost::numeric_cast<std::size_t>(mpi::size());
+	std::size_t const mpi_rank = boost::numeric_cast<std::size_t>(mpi::rank());
 	bool distributed = !field.global_id().empty();
 	BOOST_ASSERT(!distributed ? mpi_size == 1 : true);
 	BOOST_ASSERT(mpi_size > 1 ? distributed : true);

@@ -17,6 +17,7 @@
 #include "impl.hpp"
 
 #include <hbrs/theta_utils/dt/exception.hpp>
+#include <boost/numeric/conversion/cast.hpp>
 #include <netcdf.h>
 #include <stdexcept>
 
@@ -151,12 +152,12 @@ theta_grid::theta_grid(nc_cntr cntr) {
 		__check(*points_per_surfacequadrilateral() == 4);
 	}
 	
-	int no_of_surfaceelements = cntr.dimension("no_of_surfaceelements")->length();
-	int no_of_elements = cntr.dimension("no_of_elements")->length();
-	int no_of_points = cntr.dimension("no_of_points")->length();
+	int no_of_surfaceelements = boost::numeric_cast<int>( cntr.dimension("no_of_surfaceelements")->length() );
+	int no_of_elements = boost::numeric_cast<int>( cntr.dimension("no_of_elements")->length() );
+	int no_of_points = boost::numeric_cast<int>( cntr.dimension("no_of_points")->length() );
 	
 #define __check_array(__array, __dimension)                                                                            \
-	int __dimension = __array().size();                                                                                \
+	int __dimension = boost::numeric_cast<int>(__array().size());                                                      \
 	{                                                                                                                  \
 		auto opt_dim = cntr.dimension(#__dimension);                                                                   \
 		if (opt_dim) {                                                                                                 \
