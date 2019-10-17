@@ -65,7 +65,7 @@ namespace detail {
 	to_vector(From const& from) {
 		std::size_t from_sz = boost::numeric_cast<std::size_t>((*mpl::size)(from));
 		std::vector<double> to;
-		to.reserve(from_sz);
+		to.resize(from_sz);
 		BOOST_ASSERT(to.size() == from_sz);
 		
 		for (std::size_t i = 0; i < from_sz; ++i) {
@@ -90,7 +90,7 @@ namespace detail {
 		BOOST_ASSERT(from_local.Height() == from.data().Height());
 		
 		std::vector<double> to;
-		to.reserve(from_sz);
+		to.resize(from_sz);
 		BOOST_ASSERT(to.size() == from_sz);
 		
 		for (std::size_t i = 0; i < from_sz; ++i) {
