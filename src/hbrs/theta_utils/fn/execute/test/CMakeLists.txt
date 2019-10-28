@@ -4,7 +4,9 @@
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 #
 
-#################### list the subdirectories ####################
+#################### tests ####################
 
-add_subdirectory(impl)
-add_subdirectory(test)
+foreach(name
+    pca)
+    hbrs_theta_utils_add_test(fn_execute_${name} "${name}.cpp")
+endforeach()
