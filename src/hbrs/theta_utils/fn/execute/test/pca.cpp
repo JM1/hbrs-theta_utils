@@ -31,6 +31,7 @@
 #include <hbrs/theta_utils/detail/make_theta_fields.hpp>
 #include <hbrs/theta_utils/detail/copy_matrix.hpp>
 #include <hbrs/mpl/fn/zip.hpp>
+#include <hbrs/mpl/fn/equal.hpp>
 
 #include <hbrs/mpl/dt/sm.hpp>
 #include <hbrs/mpl/dt/ctsav.hpp>
@@ -89,55 +90,13 @@ BOOST_AUTO_TEST_CASE(write_read,
 	
 	static constexpr auto datasets = hana::make_tuple(
 		make_sm(
-			make_ctsav(detail::mat_a), make_matrix_size(hana::size_c<detail::mat_a_m>, hana::size_c<detail::mat_a_n>), row_major_c
+			make_ctsav(detail::mat_k), make_matrix_size(hana::size_c<detail::mat_k_m>, hana::size_c<detail::mat_k_n>), row_major_c
 		),
-		make_ctsam(
-			std::array<double, 12*12>{
-				47, -14,   0, -47,  45,  14, -26, -18,  -8,  10,  27, -45,
-				38, -38, -28, -22, -35,  -1, -29,  -2,  15,  12,  38,  29,
-				41,  -2,  43, -15,  13, -23, -33, -39,  24, -11,  47,  48,
-				-1,  -9,  -1, -26, -14, -16,  16,  22, -33, -11, -32,  16,
-				49, -44, -12, -25, -42,  -8,  -3,   9,  25,  44, -19,   5,
-				13,  44, -33,  14,  36, -28,  16,  28, -37, -14, -20,  16,
-				13, -25,  42,  46, -16,   7,   0,  -7, -48,  18,  30,   7,
-				31, -37, -37,   7,  39,  -7, -35, -34,  24,   1,   4, -33,
-				26,  32,  12,  -6, -28,   2,  -9,  39,  33,  10,  29, -48,
-				30, -14,  47, -21, -44, -32, -49, -38,   9,  25, -27, -24,
-				39, -47, -26, -44, -27,  10, -40, -38,  -6,  10,  24,  48,
-				20, -13,  14, -37, -47, -44,  49,  40, -36,   9,  25,  26
-			},
-			make_matrix_size(hana::size_c<12>, hana::size_c<12>),
-			row_major_c
+		make_sm(
+			make_ctsav(detail::mat_l), make_matrix_size(hana::size_c<detail::mat_l_m>, hana::size_c<detail::mat_l_n>), row_major_c
 		),
-		make_ctsam(
-			std::array<double, 12*6>{
-				47, -14,   0, -47,  45,  14,
-				38, -38, -28, -22, -35,  -1,
-				41,  -2,  43, -15,  13, -23,
-				-1,  -9,  -1, -26, -14, -16,
-				49, -44, -12, -25, -42,  -8,
-				13,  44, -33,  14,  36, -28,
-				13, -25,  42,  46, -16,   7,
-				31, -37, -37,   7,  39,  -7,
-				26,  32,  12,  -6, -28,   2,
-				30, -14,  47, -21, -44, -32,
-				39, -47, -26, -44, -27,  10,
-				20, -13,  14, -37, -47, -44
-			},
-			make_matrix_size(hana::size_c<12>, hana::size_c<6>),
-			row_major_c
-		),
-		make_ctsam(
-			std::array<double, 6*12>{
-				47, -14,   0, -47,  45,  14, -26, -18,  -8,  10,  27, -45,
-				38, -38, -28, -22, -35,  -1, -29,  -2,  15,  12,  38,  29,
-				41,  -2,  43, -15,  13, -23, -33, -39,  24, -11,  47,  48,
-				-1,  -9,  -1, -26, -14, -16,  16,  22, -33, -11, -32,  16,
-				49, -44, -12, -25, -42,  -8,  -3,   9,  25,  44, -19,   5,
-				13,  44, -33,  14,  36, -28,  16,  28, -37, -14, -20,  16
-			},
-			make_matrix_size(hana::size_c<6>, hana::size_c<12>),
-			row_major_c
+		make_sm(
+			make_ctsav(detail::mat_m), make_matrix_size(hana::size_c<detail::mat_m_m>, hana::size_c<detail::mat_m_n>), row_major_c
 		)
 	);
 	
@@ -199,6 +158,12 @@ BOOST_AUTO_TEST_CASE(write_read,
 		
 		auto const& dataset = hana::at(datasets, dataset_nr);
 		
+		auto sz_ = (*size)(dataset);
+		auto m_ = (*m)(sz_);
+		auto n_ = (*n)(sz_);
+		
+		BOOST_ASSERT(m_%(3u * boost::numeric_cast<std::size_t>(mpi::size())) == 0u);
+		
 		auto testcases = hana::transform(
 			factories,
 			hana::id
@@ -222,15 +187,12 @@ BOOST_AUTO_TEST_CASE(write_read,
 				
 				auto testcase = hana::at(testcases, i);
 				
+				
 				auto scatter = hana::first(testcase);
 				auto gather = hana::second(testcase);
 				
 				auto local_dataset = scatter(dataset);
 				
-				auto sz_ = (*size)(dataset);
-				auto m_ = (*m)(sz_);
-				auto n_ = (*n)(sz_);
-				BOOST_ASSERT(m_%3u == 0u);
 				
 				hbrs::theta_utils::detail::io_fixture fxo{"pca_output"};
 				
@@ -245,6 +207,9 @@ BOOST_AUTO_TEST_CASE(write_read,
 					
 					std::vector<theta_field> local_series = hbrs::theta_utils::detail::make_theta_fields(local_dataset);
 					for(theta_field & field : local_series) {
+						if (mpi::size() > 1) {
+							field.global_id() = std::vector<int>(hbrs::theta_utils::detail::size(local_series).m()/3, 0);
+						}
 						field.ndomains() = mpi::size();
 					}
 					
@@ -284,8 +249,8 @@ BOOST_AUTO_TEST_CASE(write_read,
 						: boost::optional<int>{boost::none}
 				);
 				
-				BOOST_TEST(all_paths.size() == boost::numeric_cast<std::size_t>(mpi::size()) * n_);
-				BOOST_TEST(paths.size() == n_.value);
+				BOOST_TEST((*equal)(all_paths.size(), n_)); // because every MPI process creates its own temporary directory
+				BOOST_TEST((*equal)(paths.size(), n_));
 				
 				std::vector<theta_field> local_series = read_theta_fields(paths);
 				rtsam<double, storage_order::row_major> local_series_as_matrix =
