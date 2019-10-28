@@ -462,7 +462,7 @@ gen_nc_cntr(theta_field field) {
 		if (field.ndomains()) {
 			atts.push_back({
 				"ndomains",
-				std::vector<int>{{ *field.ndomains() }}
+				std::vector<int>{ *field.ndomains() }
 			});
 		}
 	}
