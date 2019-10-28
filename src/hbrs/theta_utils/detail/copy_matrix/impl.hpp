@@ -24,6 +24,8 @@
 
 #include <hbrs/mpl/dt/matrix_size.hpp>
 #include <hbrs/mpl/dt/rtsam.hpp>
+#include <hbrs/mpl/dt/ctsam.hpp>
+#include <hbrs/mpl/dt/sm.hpp>
 
 #include <hbrs/mpl/fn/size.hpp>
 #include <hbrs/mpl/fn/at.hpp>
@@ -63,7 +65,9 @@ template<
 		#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 			std::is_same< hana::tag_of_t<To>, mpl::el_matrix_tag >::value ||
 		#endif
-		std::is_same< hana::tag_of_t<To>, mpl::rtsam_tag >::value
+		std::is_same< hana::tag_of_t<To>, mpl::rtsam_tag >::value ||
+		std::is_same< hana::tag_of_t<To>, mpl::ctsam_tag >::value ||
+		std::is_same< hana::tag_of_t<To>, mpl::sm_tag >::value
 	>* = nullptr
 >
 decltype(auto)
@@ -80,20 +84,20 @@ copy_matrix(std::vector<theta_field> const& from, To && to) {
 	BOOST_ASSERT((*mpl::equal)(from_n, to_n));
 	
 	for (std::size_t j = 0; j < from_n; ++j) {
-		BOOST_ASSERT(from[j].density().empty());
-		BOOST_ASSERT(from[j].pressure().empty());
-		BOOST_ASSERT(from[j].residual().empty());
+		BOOST_ASSERT(from.at(j).density().empty());
+		BOOST_ASSERT(from.at(j).pressure().empty());
+		BOOST_ASSERT(from.at(j).residual().empty());
 	
 		for(std::size_t i = 0; i < from_m/3; ++i) {
-			(*mpl::at)(to, mpl::make_matrix_index(i, j)) = from[j].x_velocity().begin()[i];
+			(*mpl::at)(to, mpl::make_matrix_index(i, j)) = from.at(j).x_velocity().at(i);
 		}
 		
 		for(std::size_t i = 0; i < from_m/3; ++i) {
-			(*mpl::at)(to, mpl::make_matrix_index(i+from_m/3, j)) = from[j].y_velocity().begin()[i];
+			(*mpl::at)(to, mpl::make_matrix_index(i+from_m/3, j)) = from.at(j).y_velocity().at(i);
 		}
 		
 		for(std::size_t i = 0; i < from_m/3; ++i) {
-			(*mpl::at)(to, mpl::make_matrix_index(i+from_m/3*2, j)) = from[j].z_velocity().begin()[i];
+			(*mpl::at)(to, mpl::make_matrix_index(i+from_m/3*2, j)) = from.at(j).z_velocity().at(i);
 		}
 	}
 	
@@ -106,6 +110,7 @@ copy_matrix(std::vector<theta_field> const& from, To && to) {
 		std::vector<theta_field> const& from,
 		hbrs::mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT> && to
 	) {
+		BOOST_ASSERT((size(from) == mpl::matrix_size<std::size_t, std::size_t>{to.size()}));
 		El::Zero(to.data()); // if to-matrix is larger than from-field then unused rows will just be zero.
 		to.data().Matrix() = copy_matrix(from, hbrs::mpl::el_matrix<double>(to.data().Matrix())).data();
 		return HBRS_MPL_FWD(to);
@@ -121,7 +126,9 @@ template<
 		#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 			std::is_same< hana::tag_of_t<From>, mpl::el_matrix_tag >::value ||
 		#endif
-		std::is_same< hana::tag_of_t<From>, mpl::rtsam_tag >::value
+		std::is_same< hana::tag_of_t<From>, mpl::rtsam_tag >::value ||
+		std::is_same< hana::tag_of_t<From>, mpl::ctsam_tag >::value ||
+		std::is_same< hana::tag_of_t<From>, mpl::sm_tag >::value
 	>* = nullptr
 >
 decltype(auto)
@@ -138,23 +145,23 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 	BOOST_ASSERT((*mpl::equal)(from_n, to_n));
 	
 	for (std::size_t j = 0; j < to_n; ++j) {
-		to[j].density().clear();
-		to[j].pressure().clear();
-		to[j].residual().clear();
-		BOOST_ASSERT(to[j].x_velocity().size() == to_m/3);
-		BOOST_ASSERT(to[j].y_velocity().size() == to_m/3);
-		BOOST_ASSERT(to[j].z_velocity().size() == to_m/3);
+		to.at(j).density().clear();
+		to.at(j).pressure().clear();
+		to.at(j).residual().clear();
+		BOOST_ASSERT(to.at(j).x_velocity().size() * 3 == to_m);
+		BOOST_ASSERT(to.at(j).y_velocity().size() * 3 == to_m);
+		BOOST_ASSERT(to.at(j).z_velocity().size() * 3 == to_m);
 	
 		for(std::size_t i = 0; i < to_m/3; ++i) {
-			to[j].x_velocity().begin()[i] = (*mpl::at)(from, mpl::make_matrix_index(i, j));
+			to.at(j).x_velocity().at(i) = (*mpl::at)(from, mpl::make_matrix_index(i, j));
 		}
 		
 		for(std::size_t i = 0; i < to_m/3; ++i) {
-			to[j].y_velocity().begin()[i] = (*mpl::at)(from, mpl::make_matrix_index(i+to_m/3, j));
+			to.at(j).y_velocity().at(i) = (*mpl::at)(from, mpl::make_matrix_index(i+to_m/3, j));
 		}
 		
 		for(std::size_t i = 0; i < to_m/3; ++i) {
-			to[j].z_velocity().begin()[i] = (*mpl::at)(from, mpl::make_matrix_index(i+to_m/3*2, j));
+			to.at(j).z_velocity().at(i) = (*mpl::at)(from, mpl::make_matrix_index(i+to_m/3*2, j));
 		}
 	}
 	

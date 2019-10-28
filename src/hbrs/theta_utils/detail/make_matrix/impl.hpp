@@ -94,7 +94,7 @@ namespace detail {
 		BOOST_ASSERT(to.size() == from_sz);
 		
 		for (std::size_t i = 0; i < from_sz; ++i) {
-			to.at(i) = boost::numeric_cast<double>(from_local.Get(i, 0));
+			to.at(i) = boost::numeric_cast<double>(from_local.Get(boost::numeric_cast<El::Int>(i), 0));
 		}
 		
 		return to;
