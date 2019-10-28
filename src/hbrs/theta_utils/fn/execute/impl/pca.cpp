@@ -19,7 +19,6 @@
 #include <hbrs/theta_utils/dt/command.hpp>
 #include <hbrs/theta_utils/dt/command_option.hpp>
 #include <hbrs/theta_utils/dt/theta_field.hpp>
-#include <hbrs/theta_utils/dt/theta_grid.hpp>
 #include <hbrs/theta_utils/detail/int_ranges.hpp>
 #include <hbrs/theta_utils/detail/make_matrix.hpp>
 #include <hbrs/mpl/dt/pca_filter_result.hpp>
@@ -227,6 +226,7 @@ decompose_with_pca(
 	
 	boost::optional<int> domain_num = paths[0].domain_num();
 	BOOST_ASSERT(series.at(0).ndomains() == mpi::size()); //TODO: Turn assertion into exception?
+	// TODO: Warn user that his theta_field was computed with n domains but his current number of mpi processes is different!
 	
 	// test for existing files before starting decomposition
 	std::vector<theta_field_path> output_paths = paths;
@@ -296,7 +296,22 @@ decompose_with_pca(
 			BOOST_ASSERT_MSG(false, "unknown pca backend");
 	};
 	
-	BOOST_ASSERT((*mpl::size)(reduced.latent()) == (*mpl::size)(reduced.data()));
+	#if !defined(NDEBUG)
+	{
+		auto latent_sz = (*mpl::size)(reduced.latent());
+		auto data_sz = detail::size(reduced.data());
+		auto data_m = (*mpl::m)(data_sz);
+		auto data_n = (*mpl::n)(data_sz);
+		//NOTE: pca was applied to transposed data matrix
+		auto DOF = data_n - (ctrl.center() ? 1 : 0);
+		
+		if ((DOF < data_m) && ctrl.economy()) {
+			BOOST_ASSERT(latent_sz == DOF);
+		} else {
+			BOOST_ASSERT(latent_sz == std::min(data_m, data_n));
+		}
+	}
+	#endif
 	
 	{
 		// we need global_id field if distributed, e.g. for visualization
