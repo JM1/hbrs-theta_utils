@@ -14,18 +14,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_FWD_HPP
-#define HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_FWD_HPP
+#include "impl.hpp"
 
-#include <hbrs/theta_utils/config.hpp>
-#include <hbrs/mpl/dt/rtsam/fwd.hpp>
-#include <hbrs/mpl/dt/storage_order/fwd.hpp>
-#include <hbrs/theta_utils/dt/theta_field.hpp>
-#include <vector>
-#include <string>
+#include <hbrs/mpl/core/preprocessor.hpp>
+
+#include <hbrs/mpl/detail/mpi.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/test/tree/test_unit.hpp>
+#include <boost/assert.hpp>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace mpl = hbrs::mpl;
+namespace mpi = hbrs::mpl::detail::mpi;
 namespace detail {
 
 std::vector<theta_field_path>
@@ -34,9 +34,35 @@ make_theta_field_paths(
 	std::string const& prefix,
 	std::vector<theta_field> const& field,
 	enum theta_field_path::naming_scheme scheme
-);
+) {
+	auto sz = detail::size(field);
+	
+	std::vector<theta_field_path> fields;
+	fields.reserve(sz.m());
+	
+	for(std::size_t j = 0; j < sz.n(); ++j) {
+		boost::optional<int> domain_num;
+		if (mpi::size() > 1) {
+			domain_num = mpi::rank();
+		}
+		
+		theta_field_path path{
+			dir,
+			prefix,
+			{
+				{boost::lexical_cast<std::string>(j), "000"} /* significand */,
+				"00" /* exponent */
+			} /* timestamp */,
+			static_cast<int>(j) * 10 /* step */,
+			domain_num,
+			scheme
+		};
+		
+		fields.push_back(path);
+	}
+	
+	return fields;
+}
 
 /* namespace detail */ }
 HBRS_THETA_UTILS_NAMESPACE_END
-
-#endif // !HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_FWD_HPP

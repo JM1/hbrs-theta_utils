@@ -14,137 +14,29 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define BOOST_TEST_MODULE theta_field_test
+#define BOOST_TEST_MODULE dt_theta_field_test
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 
 #include <boost/test/unit_test.hpp>
 
 #include <hbrs/mpl/config.hpp>
-#include <hbrs/mpl/detail/mpi.hpp>
 #include <hbrs/mpl/detail/test.hpp>
-#include <hbrs/mpl/dt/rtsam.hpp>
-#include <hbrs/mpl/dt/storage_order.hpp>
-#include <hbrs/theta_utils/dt/theta_field.hpp>
+#include <hbrs/theta_utils/detail/test.hpp>
 #include <hbrs/theta_utils/detail/make_theta_fields.hpp>
-#include <boost/range/irange.hpp>
-#include <boost/range/algorithm.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
-#include <array>
-#include <cstdio>
-#include <fstream>
-#include <iterator>
+#include <hbrs/theta_utils/detail/make_matrix.hpp>
 
-namespace mpi = hbrs::mpl::detail::mpi;
+#include <array>
+
 namespace utf = boost::unit_test;
-namespace tt = boost::test_tools;
 using namespace hbrs::theta_utils;
 
 namespace {
 
-struct mpi_world_size {
-	mpi_world_size(boost::integer_range<std::size_t> rng) : rng{rng} {};
-	
-	tt::assertion_result
-	operator()(utf::test_unit_id) {
-		auto sz = mpi::size();
-		if (boost::range::find(rng, sz) != rng.end()) {
-			return true;
-		}
-		
-		tt::assertion_result ans(false);
-		ans.message() << "world size " << sz << " is not supported";
-		return ans;
-	}
-	
-	boost::integer_range<std::size_t> rng;
-};
-
-fs::path
-tmp_path(fs::path base = fs::temp_directory_path()) {
-	return base / "theta_field_test" / fs::unique_path();
-}
-
-struct tmp_directory {
-	tmp_directory(fs::path path = tmp_path()) : path_{path} {
-		fs::create_directories(path_);
-	}
-	
-	virtual ~tmp_directory() {
-		 fs::remove_all(path_);
-	}
-	
-	decltype(auto)
-	path() const { return (path_); }
-private:
-	fs::path const path_;
-};
-
-auto
-make_theta_field_paths(
-	fs::path const& dir,
-	std::string const& prefix,
-	std::vector<theta_field> const& field,
-	enum theta_field_path::naming_scheme scheme
-) {
-	auto sz = detail::size(field);
-	
-	std::vector<theta_field_path> fields;
-	fields.reserve(sz.m());
-	
-	for(std::size_t j = 0; j < sz.n(); ++j) {
-		boost::optional<int> domain_num;
-		if (mpi::size() > 1) {
-			domain_num = mpi::rank();
-		}
-		
-		theta_field_path path{
-			dir,
-			prefix,
-			{
-				{boost::lexical_cast<std::string>(j), "000"} /* significand */,
-				"00" /* exponent */
-			} /* timestamp */,
-			static_cast<int>(j) * 10 /* step */,
-			domain_num,
-			scheme
-		};
-		
-		fields.push_back(path);
-	}
-	
-	return fields;
-}
-
-template<typename Path>
-void
-write_binary(Path path, char const * data, std::size_t sz) {
-	std::ofstream file;
-	file.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-	file.open(path, std::ios::binary);
-	file.write(data, sz);
-}
-
-struct io_fixture {
-	io_fixture(std::string tag) : wd_{}, prefix_{} {
-		prefix_ = tag + "test_wsz" + boost::lexical_cast<std::string>(mpi::size());
-	}
-	
-	auto const&
-	wd() const { return (wd_); }
-	
-	auto const&
-	prefix() const { return (prefix_); }
-	
-	tmp_directory wd_ /* working directory */;
-	std::string prefix_;
-};
-
 /* test data */
 inline static auto const
 fields0 = hbrs::theta_utils::detail::make_theta_fields(
-	{
+	mpl::rtsam<double, mpl::storage_order::row_major>{
 		{
 			1,2,3,
 			4,5,6,
@@ -247,20 +139,20 @@ std::array<ptr_range, 3> fields0_bytes{{
 
 /* unnamed namespace */ }
 
-BOOST_AUTO_TEST_SUITE(theta_field_test)
+BOOST_AUTO_TEST_SUITE(dt_theta_field_test)
 
 using hbrs::mpl::detail::environment_fixture;
 BOOST_TEST_GLOBAL_FIXTURE(environment_fixture);
 
-BOOST_AUTO_TEST_CASE(read, * utf::precondition(mpi_world_size{{0,4}}) ) {
+BOOST_AUTO_TEST_CASE(read, * utf::precondition(detail::mpi_world_size_condition{{0,4}}) ) {
 	for(auto scheme: { theta_field_path::naming_scheme::theta, theta_field_path::naming_scheme::tau_unsteady }) {
-		io_fixture fx{"read"};
+		detail::io_fixture fx{"read"};
 		
 		BOOST_TEST_MESSAGE("Working directory: " << fx.wd().path().string());
 		
 		//prepare test data
 		{
-			auto paths = make_theta_field_paths(
+			auto paths = detail::make_theta_field_paths(
 				fx.wd().path(), fx.prefix(), fields0, scheme
 			);
 			
@@ -270,7 +162,7 @@ BOOST_AUTO_TEST_CASE(read, * utf::precondition(mpi_world_size{{0,4}}) ) {
 				auto fsz = std::distance(std::get<0>(field), std::get<1>(field));
 				BOOST_TEST_MESSAGE("Writing " << fsz << " bytes of test data to file " << path.full_path().string());
 				
-				write_binary(path.full_path().string(), reinterpret_cast<char const*>(std::get<0>(field)), fsz);
+				detail::write_binary(path.full_path().string(), reinterpret_cast<char const*>(std::get<0>(field)), boost::numeric_cast<std::size_t>(fsz));
 			}
 		}
 		
@@ -292,12 +184,12 @@ BOOST_AUTO_TEST_CASE(read, * utf::precondition(mpi_world_size{{0,4}}) ) {
 }
 
 
-BOOST_AUTO_TEST_CASE(write, * utf::precondition(mpi_world_size{{0,4}}) ) {
+BOOST_AUTO_TEST_CASE(write, * utf::precondition(detail::mpi_world_size_condition{{0,4}}) ) {
 	for(auto scheme: { theta_field_path::naming_scheme::theta, theta_field_path::naming_scheme::tau_unsteady }) {
-		io_fixture fx{"write"};
+		detail::io_fixture fx{"write"};
 		BOOST_TEST_MESSAGE("Working directory: " << fx.wd().path().string());
 	
-		auto paths = make_theta_field_paths(
+		auto paths = detail::make_theta_field_paths(
 			fx.wd().path(), fx.prefix(), fields0, scheme
 		);
 		

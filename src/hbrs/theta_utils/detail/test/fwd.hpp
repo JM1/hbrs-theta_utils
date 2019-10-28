@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,29 +14,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_FWD_HPP
-#define HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_FWD_HPP
+#ifndef HBRS_THETA_UTILS_DETAIL_TEST_FWD_HPP
+#define HBRS_THETA_UTILS_DETAIL_TEST_FWD_HPP
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/mpl/dt/rtsam/fwd.hpp>
-#include <hbrs/mpl/dt/storage_order/fwd.hpp>
-#include <hbrs/theta_utils/dt/theta_field.hpp>
-#include <vector>
-#include <string>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
-namespace mpl = hbrs::mpl;
 namespace detail {
 
-std::vector<theta_field_path>
-make_theta_field_paths(
-	fs::path const& dir,
-	std::string const& prefix,
-	std::vector<theta_field> const& field,
-	enum theta_field_path::naming_scheme scheme
-);
+struct mpi_world_size_condition;
+struct temp_test_directory;
 
 /* namespace detail */ }
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_FWD_HPP
+#endif // !HBRS_THETA_UTILS_DETAIL_TEST_FWD_HPP

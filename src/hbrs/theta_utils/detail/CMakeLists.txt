@@ -9,4 +9,6 @@
 add_subdirectory(copy_matrix)
 add_subdirectory(int_ranges)
 add_subdirectory(make_matrix)
+add_subdirectory(make_theta_fields)
+add_subdirectory(test)
 add_subdirectory(vtk)
