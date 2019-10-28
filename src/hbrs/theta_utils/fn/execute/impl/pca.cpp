@@ -300,16 +300,10 @@ decompose_with_pca(
 	{
 		auto latent_sz = (*mpl::size)(reduced.latent());
 		auto data_sz = detail::size(reduced.data());
-		auto data_m = (*mpl::m)(data_sz);
 		auto data_n = (*mpl::n)(data_sz);
 		//NOTE: pca was applied to transposed data matrix
 		auto DOF = data_n - (ctrl.center() ? 1 : 0);
-		
-		if ((DOF < data_m) && ctrl.economy()) {
-			BOOST_ASSERT(latent_sz == DOF);
-		} else {
-			BOOST_ASSERT(latent_sz == std::min(data_m, data_n));
-		}
+		BOOST_ASSERT(latent_sz == DOF);
 	}
 	#endif
 	

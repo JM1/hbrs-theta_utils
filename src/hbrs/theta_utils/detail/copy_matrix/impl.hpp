@@ -110,7 +110,13 @@ copy_matrix(std::vector<theta_field> const& from, To && to) {
 		std::vector<theta_field> const& from,
 		hbrs::mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT> && to
 	) {
-		BOOST_ASSERT((size(from) == mpl::matrix_size<std::size_t, std::size_t>{to.size()}));
+		#if !defined(NDEBUG)
+		{
+			mpl::matrix_size<std::size_t, std::size_t> from_sz = size(from);
+			mpl::matrix_size<std::size_t, std::size_t> to_sz   = {to.size()};
+			BOOST_ASSERT(from_sz.n() == to_sz.n());
+		}
+		#endif
 		El::Zero(to.data()); // if to-matrix is larger than from-field then unused rows will just be zero.
 		to.data().Matrix() = copy_matrix(from, hbrs::mpl::el_matrix<double>(to.data().Matrix())).data();
 		return HBRS_MPL_FWD(to);
