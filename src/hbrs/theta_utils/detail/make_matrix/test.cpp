@@ -96,33 +96,47 @@ BOOST_AUTO_TEST_CASE(make_matrix_, * utf::tolerance(0.000000001)) {
 					if constexpr(decltype(tag){} == hana::type_c<mpl::ml_matrix_tag>) {
 						BOOST_TEST_MESSAGE("matlab_lapack");
 						hbrs::theta_utils::detail::copy_matrix(mpl::make_ml_matrix(dataset), series);
+						
+						auto r = hbrs::theta_utils::detail::copy_matrix(
+							series,
+							hbrs::theta_utils::detail::make_matrix(
+								tag, 
+								hbrs::theta_utils::detail::size(series)
+							)
+						);
+						HBRS_MPL_TEST_MMEQ(dataset, r, false);
 					} else 
-				#endif
+				#endif // !HBRS_MPL_ENABLE_MATLAB
 				#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 					if constexpr(decltype(tag){} == hana::type_c<mpl::el_matrix_tag>) {
 						BOOST_TEST_MESSAGE("elemental_openmp");
 						hbrs::theta_utils::detail::copy_matrix(mpl::make_el_matrix(dataset), series);
+						
+						auto r = hbrs::theta_utils::detail::copy_matrix(
+							series,
+							hbrs::theta_utils::detail::make_matrix(
+								tag, 
+								hbrs::theta_utils::detail::size(series)
+							)
+						);
+						HBRS_MPL_TEST_MMEQ(dataset, r, false);
 					} else if constexpr(decltype(tag){} == hana::type_c<mpl::el_dist_matrix_tag>) {
 						BOOST_TEST_MESSAGE("elemental_mpi");
-						hbrs::theta_utils::detail::copy_matrix(
-							mpl::make_el_dist_matrix(
-								El::Grid{El::mpi::COMM_WORLD},
-								mpl::make_el_matrix(dataset)
-							), 
-							series);
+						
+						mpl::el_dist_matrix<double, El::VC, El::STAR> dist_vc_star =
+							hbrs::theta_utils::detail::make_matrix(tag, hbrs::theta_utils::detail::size(series));
+						
+						dist_vc_star.data().Matrix() = mpl::make_el_matrix(dataset).data();
+						hbrs::theta_utils::detail::copy_matrix(dist_vc_star, series);
+						
+						mpl::el_matrix<double> local = {dist_vc_star.data().Matrix()};
+						BOOST_TEST((*mpl::equal)(local.size(), hbrs::theta_utils::detail::size(series)));
+						HBRS_MPL_TEST_MMEQ(dataset, local, false);
 					} else 
-				#endif
+				#endif // !HBRS_MPL_ENABLE_ELEMENTAL
 				{
 					BOOST_ASSERT(false);
 				}
-				
-				auto sz_ = hbrs::theta_utils::detail::size(series);
-				auto r = hbrs::theta_utils::detail::copy_matrix(
-					series,
-					hbrs::theta_utils::detail::make_matrix(tag, sz_)
-				);
-				
-				HBRS_MPL_TEST_MMEQ(dataset, r, false);
 			}
 		);
 		++dataset_nr;
