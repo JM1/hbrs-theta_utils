@@ -120,7 +120,7 @@ namespace detail {
 		
 		auto min_m = El::mpi::AllReduce(sz.m(), El::mpi::MIN, grid.Comm());
 		auto max_m = El::mpi::AllReduce(sz.m(), El::mpi::MAX, grid.Comm());
-		BOOST_ASSERT(min_m <= max_m || min_m > max_m);
+		BOOST_ASSERT(min_m == max_m);
 		auto full_m = max_m * mpi::size(); //TODO: Is this correct?
 
 	// 	auto full_m = El::mpi::AllReduce(sz.m(), El::mpi::SUM, grid.Comm());
