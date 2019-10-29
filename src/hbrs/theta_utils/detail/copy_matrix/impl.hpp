@@ -115,6 +115,7 @@ copy_matrix(std::vector<theta_field> const& from, To && to) {
 			mpl::matrix_size<std::size_t, std::size_t> from_sz = size(from);
 			mpl::matrix_size<std::size_t, std::size_t> to_sz   = {to.size()};
 			BOOST_ASSERT(from_sz.n() == to_sz.n());
+			BOOST_ASSERT(from_sz.m() == to.data().Matrix().Height());
 		}
 		#endif
 		El::Zero(to.data()); // if to-matrix is larger than from-field then unused rows will just be zero.
@@ -180,6 +181,15 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 		hbrs::mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT> const& from,
 		std::vector<theta_field> & to
 	) {
+		#if !defined(NDEBUG)
+		{
+			mpl::matrix_size<std::size_t, std::size_t> from_sz = {from.size()};
+			mpl::matrix_size<std::size_t, std::size_t> to_sz   = size(to);
+			BOOST_ASSERT(from_sz.n() == to_sz.n());
+			BOOST_ASSERT(from.data().LockedMatrix().Height() == to_sz.m());
+		}
+		#endif
+		
 		return copy_matrix(hbrs::mpl::el_matrix<double const>(from.data().LockedMatrix()), to);
 	}
 #endif
