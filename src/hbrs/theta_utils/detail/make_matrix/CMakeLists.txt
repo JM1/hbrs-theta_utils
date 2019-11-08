@@ -1,9 +1,0 @@
-# Copyright (c) 2019 Jakob Meng, <jakobmeng@web.de>
-#
-# Redistribution and use is allowed according to the terms of the BSD license.
-# For details see the accompanying COPYING-CMAKE-SCRIPTS file.
-#
-
-#################### tests ####################
-
-hbrs_theta_utils_add_test(detail_make_matrix "test.cpp")

@@ -24,7 +24,6 @@
 #include <hbrs/mpl/detail/test.hpp>
 #include <hbrs/theta_utils/detail/test.hpp>
 #include <hbrs/theta_utils/detail/make_theta_fields.hpp>
-#include <hbrs/theta_utils/detail/make_matrix.hpp>
 
 #include <array>
 
@@ -172,9 +171,9 @@ BOOST_AUTO_TEST_CASE(read, * utf::precondition(detail::mpi_world_size_condition{
 		
 		#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 			//compare to reference data
-			auto ref_sz = detail::size(fields0);
+			auto ref_sz = detail::local_size(fields0);
 			auto ref = detail::copy_matrix(fields0, mpl::el_matrix<double>{(El::Int)ref_sz.m(),(El::Int)ref_sz.n()});
-			auto got_sz = detail::size(got);
+			auto got_sz = detail::local_size(got);
 			auto got_ = detail::copy_matrix(got, mpl::el_matrix<double>{(El::Int)got_sz.m(),(El::Int)got_sz.n()});
 			HBRS_MPL_TEST_MMEQ(ref, got_, false);
 		#else

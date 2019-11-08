@@ -16,11 +16,15 @@
 
 #include "impl.hpp"
 
+#include <hbrs/theta_utils/dt/exception.hpp>
+#include <hbrs/mpl/detail/mpi.hpp>
+
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
+namespace mpi = hbrs::mpl::detail::mpi;
 namespace detail {
 
 mpl::matrix_size<std::size_t, std::size_t>
-size(std::vector<theta_field> const& series) {
+local_size(std::vector<theta_field> const& series) {
 	BOOST_ASSERT(series.size() > 0);
 	std::size_t xv_sz = series[0].x_velocity().size();
 	std::size_t yv_sz = series[0].y_velocity().size();
@@ -35,6 +39,42 @@ size(std::vector<theta_field> const& series) {
 	BOOST_ASSERT(n > 0);
 	
 	return {m,n};
+}
+
+mpl::matrix_size<std::size_t, std::size_t>
+global_size(std::vector<theta_field> const& series) {
+	auto lcl_sz = local_size(series);
+	
+	if (mpi::size() == 1) {
+		return lcl_sz;
+	}
+	
+	std::size_t lcl_m = lcl_sz.m();
+	std::size_t lcl_n = lcl_sz.n();
+	std::size_t gbl_m;
+	mpi::allreduce(&lcl_m, &gbl_m, 1, MPI_SUM, MPI_COMM_WORLD);
+	
+	std::size_t gbl_min_n, gbl_max_n;
+	mpi::allreduce(&lcl_n, &gbl_min_n, 1, MPI_MIN, MPI_COMM_WORLD);
+	mpi::allreduce(&lcl_n, &gbl_max_n, 1, MPI_MAX, MPI_COMM_WORLD);
+	
+	if(gbl_min_n != gbl_max_n) {
+		BOOST_THROW_EXCEPTION((mpl::incompatible_matrix_exception{} << mpl::errinfo_matrix_size{lcl_sz}));
+	}
+	
+	return { gbl_m, gbl_min_n };
+}
+
+bool
+iff(bool lhs, bool rhs) {
+	/* p | q | p != q | !(p != q)
+	 * --+---+--------+----------
+	 * F | F |   F    |     T
+	 * T | F |   T    |     F
+	 * F | T |   T    |     F
+	 * T | T |   F    |     T
+	 */
+	return !(lhs != rhs);
 }
 
 /* namespace detail */ }

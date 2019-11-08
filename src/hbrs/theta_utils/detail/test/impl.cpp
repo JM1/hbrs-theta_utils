@@ -28,7 +28,7 @@ namespace detail {
 
 mpi_world_size_condition::mpi_world_size_condition(
 	boost::integer_range<std::size_t> supported
-) : supported_{supported} {};
+) : supported_{supported} {}
 
 boost::test_tools::assertion_result
 mpi_world_size_condition::operator()(boost::unit_test::test_unit_id) {

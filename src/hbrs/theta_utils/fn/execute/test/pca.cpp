@@ -80,7 +80,7 @@ using hbrs::mpl::detail::environment_fixture;
 BOOST_TEST_GLOBAL_FIXTURE(environment_fixture);
 
 BOOST_AUTO_TEST_CASE(write_read,
-	* utf::precondition(hbrs::theta_utils::detail::mpi_world_size_condition{{0,4}})
+	* utf::precondition(hbrs::theta_utils::detail::mpi_world_size_condition{{0,3}})
 	* utf::tolerance(_TOL)
 ) {
 	using namespace hbrs::mpl;
@@ -116,8 +116,8 @@ BOOST_AUTO_TEST_CASE(write_read,
 				
 				static El::Grid grid {El::mpi::COMM_WORLD}; // grid is static because reference to grid is required by El::DistMatrix<...>
 				
-				auto dist_star_star = make_el_dist_matrix(grid, make_el_matrix(dataset));
-				auto dist_vc_star = el_dist_matrix<_Ring_, El::VC, El::STAR>{dist_star_star.data()};
+				el_dist_matrix<_Ring_, El::STAR, El::STAR> dist_star_star = make_el_dist_matrix(grid, make_el_matrix(dataset));
+				el_dist_matrix<_Ring_, El::VC,   El::STAR> dist_vc_star   = {dist_star_star.data()};
 				
 				return make_el_matrix(dist_vc_star.data().Matrix());
 			},
@@ -197,6 +197,9 @@ BOOST_AUTO_TEST_CASE(write_read,
 				hbrs::theta_utils::detail::io_fixture fxo{"pca_output"};
 				
 				{
+					/* When fxi goes out of scope, then this input directory is removed.
+					 * This prevents buggy code from accidentally reading the input directory.
+					 */
 					hbrs::theta_utils::detail::io_fixture fxi{"pca_input"};
 					BOOST_TEST_MESSAGE("PCA input directory: " << fxi.wd().path().string());
 					BOOST_TEST_MESSAGE("PCA output directory: " << fxo.wd().path().string());
@@ -208,7 +211,7 @@ BOOST_AUTO_TEST_CASE(write_read,
 					std::vector<theta_field> local_series = hbrs::theta_utils::detail::make_theta_fields(local_dataset);
 					for(theta_field & field : local_series) {
 						if (mpi::size() > 1) {
-							field.global_id() = std::vector<int>(hbrs::theta_utils::detail::size(local_series).m()/3, 0);
+							field.global_id() = std::vector<int>(hbrs::theta_utils::detail::local_size(local_series).m()/3, 0);
 						}
 						field.ndomains() = mpi::size();
 					}
@@ -254,7 +257,12 @@ BOOST_AUTO_TEST_CASE(write_read,
 				
 				std::vector<theta_field> local_series = read_theta_fields(paths);
 				rtsam<double, storage_order::row_major> local_series_as_matrix =
-					hbrs::theta_utils::detail::copy_matrix(local_series, rtsam<double, storage_order::row_major>{hbrs::theta_utils::detail::size(local_series)});
+					hbrs::theta_utils::detail::copy_matrix(
+						local_series, 
+						rtsam<double, storage_order::row_major>{
+							hbrs::theta_utils::detail::local_size(local_series)
+						}
+					);
 				
 				return gather(local_series_as_matrix, sz_);
 			}

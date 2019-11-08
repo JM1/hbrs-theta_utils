@@ -35,7 +35,7 @@ make_theta_field_paths(
 	std::vector<theta_field> const& field,
 	enum theta_field_path::naming_scheme scheme
 ) {
-	auto sz = detail::size(field);
+	auto sz = local_size(field);
 	
 	std::vector<theta_field_path> fields;
 	fields.reserve(sz.m());

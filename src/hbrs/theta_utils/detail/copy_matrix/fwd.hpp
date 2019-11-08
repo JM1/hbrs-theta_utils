@@ -17,6 +17,22 @@
 #ifndef HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_FWD_HPP
 #define HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_FWD_HPP
 
-//BLANK
+#include <hbrs/theta_utils/config.hpp>
+#include <hbrs/theta_utils/dt/theta_field.hpp>
+#include <hbrs/mpl/dt/matrix_size.hpp>
+#include <vector>
+
+HBRS_THETA_UTILS_NAMESPACE_BEGIN
+namespace mpl = hbrs::mpl;
+namespace detail {
+
+mpl::matrix_size<std::size_t, std::size_t>
+local_size(std::vector<theta_field> const& series);
+
+mpl::matrix_size<std::size_t, std::size_t>
+global_size(std::vector<theta_field> const& series);
+
+/* namespace detail */ }
+HBRS_THETA_UTILS_NAMESPACE_END
 
 #endif // !HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_FWD_HPP

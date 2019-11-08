@@ -24,6 +24,10 @@
     #include <hbrs/mpl/dt/el_dist_matrix.hpp>
 #endif // !HBRS_MPL_ENABLE_ELEMENTAL
 
+#ifdef HBRS_MPL_ENABLE_MATLAB
+    #include <hbrs/mpl/dt/ml_matrix.hpp>
+#endif // !HBRS_MPL_ENABLE_MATLAB
+
 #include <hbrs/mpl/dt/sm.hpp>
 #include <hbrs/mpl/dt/rtsam.hpp>
 #include <hbrs/mpl/dt/ctsam.hpp>
@@ -58,6 +62,19 @@ template<
 				>, double
 			>
 		)
+		#ifdef HBRS_MPL_ENABLE_MATLAB
+		|| (
+			(
+				std::is_same_v< hana::tag_of_t<From>, mpl::ml_matrix_tag >
+			) &&
+			std::is_same_v<
+				/* Ring == double? */
+				std::decay_t<
+					decltype( std::declval<From>().at(mpl::matrix_index<int, int>{0,0}))
+				>, double
+			>
+		)
+		#endif // !HBRS_MPL_ENABLE_MATLAB
 		#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 		|| (
 			(

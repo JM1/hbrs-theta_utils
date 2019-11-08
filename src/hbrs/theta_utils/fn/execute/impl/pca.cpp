@@ -20,7 +20,7 @@
 #include <hbrs/theta_utils/dt/command_option.hpp>
 #include <hbrs/theta_utils/dt/theta_field.hpp>
 #include <hbrs/theta_utils/detail/int_ranges.hpp>
-#include <hbrs/theta_utils/detail/make_matrix.hpp>
+#include <hbrs/theta_utils/detail/copy_matrix.hpp>
 #include <hbrs/mpl/dt/pca_filter_result.hpp>
 #include <hbrs/mpl/dt/pca_control.hpp>
 
@@ -31,8 +31,10 @@
 #include <hbrs/mpl/fn/m.hpp>
 #include <hbrs/mpl/fn/n.hpp>
 
-#include <boost/numeric/conversion/cast.hpp>
+#include <hbrs/mpl/detail/mpi.hpp>
 #include <hbrs/theta_utils/dt/exception.hpp>
+
+#include <boost/numeric/conversion/cast.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/format.hpp>
 #include <boost/system/error_code.hpp>
@@ -43,6 +45,7 @@
 #include <boost/iostreams/device/file.hpp>
 #include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
+
 #include <sstream>
 #include <limits>
 
@@ -150,25 +153,100 @@ write_stats(
 // 	return std::make_tuple(unzipped1, unzipped2);
 // }
 
-#if defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL)
-	template<typename ToTag>
+#ifdef HBRS_MPL_ENABLE_MATLAB
 	auto
-	convert_to(std::vector<theta_field> const& series, hana::basic_type<ToTag>) {
-		return detail::copy_matrix(
-			series,
-			detail::make_matrix(hana::type_c<ToTag>, detail::size(series))
-		);
+	init_matrix(matlab_lapack_backend, mpl::matrix_size<int, int> sz) {
+		BOOST_ASSERT(mpi::size() == 1);
+		return mpl::make_ml_matrix(hana::type_c<double>, sz);
+	}
+#endif
+
+#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+	auto
+	init_matrix(elemental_openmp_backend, mpl::matrix_size<El::Int, El::Int> sz) {
+		BOOST_ASSERT(mpi::size() == 1);
+		return mpl::make_el_matrix(hana::type_c<double>, sz);
 	}
 
-	template<typename From, typename To>
+	auto
+	init_matrix(elemental_mpi_backend, mpl::matrix_size<El::Int, El::Int> sz) {
+		static El::Grid const grid{El::mpi::COMM_WORLD};
+		return mpl::make_el_dist_matrix(
+			grid,
+			hana::type_c<double>,
+			mpl::make_matrix_distribution(
+				hana::integral_constant<El::Dist, El::VC>{},
+				hana::integral_constant<El::Dist, El::STAR>{},
+				hana::integral_constant<El::DistWrap, El::ELEMENT>{}
+			),
+			sz
+		);
+	}
+#endif
+
+#if defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL)
+	template<
+		typename From,
+		typename std::enable_if_t<
+			#ifdef HBRS_MPL_ENABLE_MATLAB
+				std::is_same< hana::tag_of_t<From>, mpl::ml_column_vector_tag >::value ||
+			#endif
+			#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+				std::is_same< hana::tag_of_t<From>, mpl::el_column_vector_tag >::value ||
+			#endif
+			false
+		>* = nullptr
+	>
+	auto
+	to_std_vector(From const& from) {
+		std::size_t from_sz = boost::numeric_cast<std::size_t>((*mpl::size)(from));
+		std::vector<double> to;
+		to.resize(from_sz);
+		BOOST_ASSERT(to.size() == from_sz);
+		
+		for (std::size_t i = 0; i < from_sz; ++i) {
+			to.at(i) = boost::numeric_cast<double>((*mpl::at)(from, i));
+		}
+		
+		return to;
+	}
+#endif
+
+#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+	template<typename Ring, El::Dist Columnwise, El::Dist Rowwise, El::DistWrap Wrapping>
+	auto
+	to_std_vector(mpl::el_dist_column_vector<Ring, Columnwise, Rowwise, Wrapping> const& from) {
+		typedef std::decay_t<Ring> _Ring_;
+		
+		El::DistMatrixReadProxy<Ring, _Ring_, El::STAR, El::STAR, Wrapping> from_pxy = {from.data()};
+		
+		auto from_local = from_pxy.GetLocked();
+		std::size_t from_sz = boost::numeric_cast<std::size_t>(from_local.Height());
+		BOOST_ASSERT(from_local.Width() == 1);
+		BOOST_ASSERT(from_local.Height() == from.data().Height());
+		
+		std::vector<double> to;
+		to.resize(from_sz);
+		BOOST_ASSERT(to.size() == from_sz);
+		
+		for (std::size_t i = 0; i < from_sz; ++i) {
+			to.at(i) = boost::numeric_cast<double>(from_local.Get(boost::numeric_cast<El::Int>(i), 0));
+		}
+		
+		return to;
+	}
+#endif
+
+#if defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL)
+	template<typename From>
 	mpl::pca_filter_result<
 		std::vector<theta_field> /* data */,
 		std::vector<double> /* latent*/
 	>
-	convert_from(From from, To && to) {
+	copy(From && from, std::vector<theta_field> & to) {
 		return {
-			detail::copy_matrix(from.data(), to),
-			detail::to_vector(from.latent())
+			detail::copy_matrix(HBRS_MPL_FWD(from).data(), to),
+			to_std_vector(HBRS_MPL_FWD(from).latent())
 		};
 	}
 	
@@ -189,18 +267,21 @@ write_stats(
 		);
 	}
 	
-	template<typename ToTag>
+	template<typename Backend>
 	decltype(auto)
 	reduce(
 		std::vector<theta_field> series,
-		hana::basic_type<ToTag>,
+		Backend backend,
 		std::function<bool(std::size_t)> keep,
 		mpl::pca_control<bool,bool,bool> ctrl
 	) {
-		return convert_from(
+		return copy(
 			reduce(
-				convert_to(series, hana::type_c<ToTag>), 
-				keep, 
+				detail::copy_matrix(
+					series,
+					init_matrix(backend, detail::global_size(series))
+				),
+				keep,
 				ctrl
 			),
 			series
@@ -262,7 +343,9 @@ decompose_with_pca(
 		std::vector<double>
 	> reduced;
 	
-	BOOST_ASSERT(mpi::size() > 1 ? backend == pca_backend::elemental_mpi : true);
+	if ((mpi::size() > 1) && (backend != pca_backend::elemental_mpi)) {
+		BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{backend});
+	}
 	
 	std::function<bool(std::size_t)> keep = [&includes](std::size_t i) {
 		return detail::in_int_ranges(includes, i); 
@@ -271,39 +354,41 @@ decompose_with_pca(
 	mpl::pca_control<bool,bool,bool> ctrl {true /* economy */, center, normalize};
 	
 	switch (backend) {
+		#ifdef HBRS_MPL_ENABLE_MATLAB
 		case pca_backend::matlab_lapack:
-			#ifdef HBRS_MPL_ENABLE_MATLAB
-				reduced = reduce(std::move(series), hana::type_c<mpl::ml_matrix_tag>, keep, ctrl);
-			#else
-				BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{matlab_lapack_backend_c});
-			#endif
+			reduced = reduce(std::move(series), matlab_lapack_backend_c, keep, ctrl);
 			break;
+		#endif // !HBRS_MPL_ENABLE_MATLAB
+		#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 		case pca_backend::elemental_openmp:
-			#ifdef HBRS_MPL_ENABLE_ELEMENTAL
-				reduced = reduce(std::move(series), hana::type_c<mpl::el_matrix_tag>, keep, ctrl);
-			#else
-				BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{elemental_openmp_backend_c});
-			#endif
+			reduced = reduce(std::move(series), elemental_openmp_backend_c, keep, ctrl);
 			break;
 		case pca_backend::elemental_mpi:
-			#ifdef HBRS_MPL_ENABLE_ELEMENTAL
-				reduced = reduce(std::move(series), hana::type_c<mpl::el_dist_matrix_tag>, keep, ctrl);
-			#else
-				BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{elemental_mpi_backend_c});
-			#endif
+			reduced = reduce(std::move(series), elemental_mpi_backend_c, keep, ctrl);
 			break;
+		#endif // !HBRS_MPL_ENABLE_ELEMENTAL
 		default:
-			BOOST_ASSERT_MSG(false, "unknown pca backend");
+			BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{backend});
 	};
 	
 	#if !defined(NDEBUG)
 	{
 		auto latent_sz = (*mpl::size)(reduced.latent());
-		auto data_sz = detail::size(reduced.data());
-		auto data_n = (*mpl::n)(data_sz);
+		auto data_sz = detail::global_size(reduced.data());
+		std::size_t data_m = (*mpl::m)(data_sz);
+		std::size_t data_n = (*mpl::n)(data_sz);
 		//NOTE: pca was applied to transposed data matrix
 		auto DOF = data_n - (ctrl.center() ? 1 : 0);
-		BOOST_ASSERT(latent_sz == DOF);
+		
+		if (DOF < data_m) {
+			if (ctrl.economy()) {
+				BOOST_ASSERT(latent_sz == DOF);
+			} else {
+				BOOST_ASSERT(latent_sz == data_m);
+			}
+		} else {
+			BOOST_ASSERT(latent_sz == std::min(data_m, DOF));
+		}
 	}
 	#endif
 	
