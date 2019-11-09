@@ -136,13 +136,13 @@ operator<<(std::ostream & o, El::AbstractDistMatrix<T> const& m) {
 template<typename T, typename... Ts>
 void
 debug_output(T && t, Ts && ... ts) {
-	#ifdef HBRS_THETA_UTILS_DEBUG_OUTPUT
+	#ifdef HBRS_THETA_UTILS_ENABLE_DEBUG_OUTPUT
 		std::cerr << HBRS_MPL_FWD(t);
 		if constexpr(sizeof...(ts) > 0) {
 			debug_output(HBRS_MPL_FWD(ts)...);
 		}
 		std::cerr << std::flush;
-	#endif // !HBRS_THETA_UTILS_DEBUG_OUTPUT
+	#endif // !HBRS_THETA_UTILS_ENABLE_DEBUG_OUTPUT
 }
 
 bool
