@@ -97,6 +97,9 @@ BOOST_AUTO_TEST_CASE(write_read,
 		),
 		make_sm(
 			make_ctsav(detail::mat_m), make_matrix_size(hana::size_c<detail::mat_m_m>, hana::size_c<detail::mat_m_n>), row_major_c
+		),
+		make_sm(
+			make_ctsav(detail::mat_p), make_matrix_size(hana::size_c<detail::mat_p_m>, hana::size_c<detail::mat_p_n>), row_major_c
 		)
 	);
 	
