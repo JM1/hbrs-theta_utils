@@ -405,9 +405,9 @@ parse_options(int argc, char *argv[]) {
 				});
 			}
 			
-			if (mpi::size() > 1 && cmd.pca_opts.backend != pca_backend::elemental_mpi) {
+			if (mpi::comm_size() > 1 && cmd.pca_opts.backend != pca_backend::elemental_mpi) {
 				BOOST_THROW_EXCEPTION(bpo::invalid_option_value{
-					(boost::format("Running with %d processes, but pca backend %s is single process only. Use ELEMENTAL_MPI instead!") % mpi::size() % backend).str()
+					(boost::format("Running with %d processes, but pca backend %s is single process only. Use ELEMENTAL_MPI instead!") % mpi::comm_size() % backend).str()
 				});
 			}
 		} else {

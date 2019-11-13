@@ -32,7 +32,7 @@ mpi_world_size_condition::mpi_world_size_condition(
 
 boost::test_tools::assertion_result
 mpi_world_size_condition::operator()(boost::unit_test::test_unit_id) {
-	auto sz = mpi::size();
+	auto sz = mpi::comm_size();
 	if (boost::range::find(supported_, sz) != supported_.end()) {
 		return true;
 	}
@@ -61,7 +61,7 @@ fs::path const&
 temp_test_directory::path() const { return (path_); }
 
 io_fixture::io_fixture(std::string tag) : wd_{}, prefix_{} {
-	prefix_ = tag + "test_wsz" + boost::lexical_cast<std::string>(mpi::size());
+	prefix_ = tag + "test_wsz" + boost::lexical_cast<std::string>(mpi::comm_size());
 }
 
 temp_test_directory const&

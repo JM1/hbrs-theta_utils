@@ -156,7 +156,7 @@ write_stats(
 #ifdef HBRS_MPL_ENABLE_MATLAB
 	auto
 	init_matrix(matlab_lapack_backend, mpl::matrix_size<int, int> sz) {
-		BOOST_ASSERT(mpi::size() == 1);
+		BOOST_ASSERT(mpi::comm_size() == 1);
 		return mpl::make_ml_matrix(hana::type_c<double>, sz);
 	}
 #endif
@@ -164,7 +164,7 @@ write_stats(
 #ifdef HBRS_MPL_ENABLE_ELEMENTAL
 	auto
 	init_matrix(elemental_openmp_backend, mpl::matrix_size<El::Int, El::Int> sz) {
-		BOOST_ASSERT(mpi::size() == 1);
+		BOOST_ASSERT(mpi::comm_size() == 1);
 		return mpl::make_el_matrix(hana::type_c<double>, sz);
 	}
 
@@ -306,7 +306,7 @@ decompose_with_pca(
 	std::vector<theta_field> series = read_theta_fields(paths, {".*_velocity"});
 	
 	boost::optional<int> domain_num = paths[0].domain_num();
-	BOOST_ASSERT(series.at(0).ndomains() == mpi::size()); //TODO: Turn assertion into exception?
+	BOOST_ASSERT(series.at(0).ndomains() == mpi::comm_size()); //TODO: Turn assertion into exception?
 	// TODO: Warn user that his theta_field was computed with n domains but his current number of mpi processes is different!
 	
 	// test for existing files before starting decomposition
@@ -343,7 +343,7 @@ decompose_with_pca(
 		std::vector<double>
 	> reduced;
 	
-	if ((mpi::size() > 1) && (backend != pca_backend::elemental_mpi)) {
+	if ((mpi::comm_size() > 1) && (backend != pca_backend::elemental_mpi)) {
 		BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{backend});
 	}
 	
@@ -396,7 +396,7 @@ decompose_with_pca(
 		// we need global_id field if distributed, e.g. for visualization
 		std::vector<theta_field> global_ids = read_theta_fields(paths, {"global_id"});
 		BOOST_ASSERT(reduced.data().size() == global_ids.size());
-		BOOST_ASSERT(mpi::size() > 1
+		BOOST_ASSERT(mpi::comm_size() > 1
 			? global_ids[0].global_id().size() > 0
 			: global_ids[0].global_id().size() == 0
 		);
@@ -405,7 +405,7 @@ decompose_with_pca(
 			auto & src = global_ids[i].global_id();
 			auto & tgt = reduced.data()[i].global_id();
 			
-			BOOST_ASSERT(mpi::size() > 1
+			BOOST_ASSERT(mpi::comm_size() > 1
 				? src.size() == reduced.data()[i].x_velocity().size() /* distributed */
 				: src.size() == 0
 			);
@@ -428,8 +428,8 @@ execute(pca_cmd cmd) {
 	
 	auto paths = filter_theta_fields_by_domain_num(
 		find_theta_fields(cmd.i_opts.path, cmd.i_opts.pval_prefix),
-		mpi::size() > 1
-			? boost::optional<int>{mpi::rank()}
+		mpi::comm_size() > 1
+			? boost::optional<int>{mpi::comm_rank()}
 			: boost::optional<int>{boost::none}
 	);
 	

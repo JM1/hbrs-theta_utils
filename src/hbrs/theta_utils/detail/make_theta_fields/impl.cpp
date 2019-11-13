@@ -42,8 +42,8 @@ make_theta_field_paths(
 	
 	for(std::size_t j = 0; j < sz.n(); ++j) {
 		boost::optional<int> domain_num;
-		if (mpi::size() > 1) {
-			domain_num = mpi::rank();
+		if (mpi::comm_size() > 1) {
+			domain_num = mpi::comm_rank();
 		}
 		
 		theta_field_path path{

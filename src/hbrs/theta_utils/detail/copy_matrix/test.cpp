@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 				
 				#ifdef HBRS_MPL_ENABLE_MATLAB
 					if constexpr(decltype(tag){} == hana::type_c<mpl::ml_matrix_tag>) {
-						if (mpi::size() > 1 && mpi::rank() != MPI_ROOT) { return; }
+						if (mpi::comm_size() > 1 && mpi::comm_rank() != MPI_ROOT) { return; }
 						BOOST_TEST_MESSAGE("matlab_lapack");
 						std::vector<theta_field> series = detail::make_theta_fields(
 							mpl::rtsam<double, mpl::storage_order::row_major>{(*mpl::size)(dataset)}
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 				#endif // !HBRS_MPL_ENABLE_MATLAB
 				#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 					if constexpr(decltype(tag){} == hana::type_c<mpl::el_matrix_tag>) {
-						if (mpi::size() > 1 && mpi::rank() != MPI_ROOT) { return; }
+						if (mpi::comm_size() > 1 && mpi::comm_rank() != MPI_ROOT) { return; }
 						BOOST_TEST_MESSAGE("elemental_openmp");
 						std::vector<theta_field> series = detail::make_theta_fields(
 							mpl::rtsam<double, mpl::storage_order::row_major>{(*mpl::size)(dataset)}
@@ -180,11 +180,11 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 							mpl::el_matrix<double> concat = mpl::make_el_matrix(
 								hana::type_c<double>,
 								mpl::matrix_size<El::Int, El::Int>{
-									single.data().Height() * mpi::size(),
+									single.data().Height() * mpi::comm_size(),
 									single.data().Width()
 								}
 							);
-							for(El::Int i = 0; i < mpi::size(); ++i) {
+							for(El::Int i = 0; i < mpi::comm_size(); ++i) {
 								auto view = concat.data()(
 									El::IR(i*single.data().Height(), (i+1)*single.data().Height()),
 									El::ALL
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 							mpl::el_matrix<double> untouched = mpl::make_el_matrix(dataset);
 							
 							#if !defined(NDEBUG)
-								El::Print(untouched.data(), std::string("untouched at mpi_rank ") + boost::lexical_cast<std::string>(mpi::rank()) + std::string(":") );
+								El::Print(untouched.data(), std::string("untouched at mpi_rank ") + boost::lexical_cast<std::string>(mpi::comm_rank()) + std::string(":") );
 							#endif
 							
 							std::random_device rd;
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 							);
 							
 							#if !defined(NDEBUG)
-								El::Print(truncated.data(), std::string("truncated at mpi_rank ") + boost::lexical_cast<std::string>(mpi::rank()) + std::string(":") );
+								El::Print(truncated.data(), std::string("truncated at mpi_rank ") + boost::lexical_cast<std::string>(mpi::comm_rank()) + std::string(":") );
 							#endif
 							std::vector<theta_field> series = detail::make_theta_fields(
 								mpl::rtsam<double, mpl::storage_order::row_major>{(*mpl::size)(truncated)}

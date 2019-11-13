@@ -45,7 +45,7 @@ mpl::matrix_size<std::size_t, std::size_t>
 global_size(std::vector<theta_field> const& series) {
 	auto lcl_sz = local_size(series);
 	
-	if (mpi::size() == 1) {
+	if (mpi::comm_size() == 1) {
 		return lcl_sz;
 	}
 	

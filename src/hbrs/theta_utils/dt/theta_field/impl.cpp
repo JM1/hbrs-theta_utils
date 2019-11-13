@@ -364,11 +364,11 @@ filter_theta_fields_by_domain_num(
 	std::vector<theta_field_path> const& fields,
 	boost::optional<int> const& domain_num
 ) {
-	BOOST_ASSERT(domain_num ? *domain_num == mpi::rank() : true);
+	BOOST_ASSERT(domain_num ? *domain_num == mpi::comm_rank() : true);
 	
 	std::vector<theta_field_path> kept;
 	if (!domain_num) {
-		BOOST_ASSERT(mpi::size() == 1);
+		BOOST_ASSERT(mpi::comm_size() == 1);
 		// keep files without domain suffix
 		std::copy_if(
 			fields.begin(),

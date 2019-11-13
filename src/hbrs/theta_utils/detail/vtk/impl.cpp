@@ -206,8 +206,8 @@ vtkSmartPointer<vtkUnstructuredGrid>
 make_vtk_unstructured_grid(theta_grid const& grid, theta_field const& field) {
 	static constexpr auto INVALID_ID = std::numeric_limits<std::size_t>::max();
 	
-	std::size_t const mpi_size = boost::numeric_cast<std::size_t>(mpi::size());
-	std::size_t const mpi_rank = boost::numeric_cast<std::size_t>(mpi::rank());
+	std::size_t const mpi_size = boost::numeric_cast<std::size_t>(mpi::comm_size());
+	std::size_t const mpi_rank = boost::numeric_cast<std::size_t>(mpi::comm_rank());
 	bool distributed = !field.global_id().empty();
 	BOOST_ASSERT(!distributed ? mpi_size == 1 : true);
 	BOOST_ASSERT(mpi_size > 1 ? distributed : true);
@@ -843,9 +843,9 @@ write_vtk_xml_binary_parallel(vtkSmartPointer<vtkUnstructuredGrid> grid, char co
 
 	vtkNew<vtkXMLPUnstructuredGridWriter> wtr;
 	
-	wtr->SetNumberOfPieces(mpi::size());
-	wtr->SetStartPiece(mpi::rank());
-	wtr->SetEndPiece(mpi::rank());
+	wtr->SetNumberOfPieces(mpi::comm_size());
+	wtr->SetStartPiece(mpi::comm_rank());
+	wtr->SetEndPiece(mpi::comm_rank());
 	
 	vtkSmartPointer<detail::ErrorObserver> throw_error{new detail::ErrorObserver{
 		[](auto caller, auto calldata){
@@ -1016,7 +1016,7 @@ convert_to_vtk(
 	vtk_file_format format,
 	bool overwrite
 ) {
-	bool distributed = mpi::size() > 1;
+	bool distributed = mpi::comm_size() > 1;
 	theta_grid const grid = read_theta_grid(grid_path);
 
 	// create vtk filenames
@@ -1055,7 +1055,7 @@ convert_to_vtk(
 			excludes
 		);
 		
-		BOOST_ASSERT(*field.ndomains() == mpi::size());
+		BOOST_ASSERT(*field.ndomains() == mpi::comm_size());
 		
 		vtk_path vtk_path = vtk_paths[i];
 		auto vtk_grid = make_vtk_unstructured_grid(grid, field);

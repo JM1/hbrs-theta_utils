@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(write_read,
 		auto m_ = (*m)(sz_);
 		auto n_ = (*n)(sz_);
 		
-		BOOST_ASSERT(m_%(3u * boost::numeric_cast<std::size_t>(mpi::size())) == 0u);
+		BOOST_ASSERT(m_%(3u * boost::numeric_cast<std::size_t>(mpi::comm_size())) == 0u);
 		
 		auto testcases = hana::transform(
 			factories,
@@ -207,16 +207,16 @@ BOOST_AUTO_TEST_CASE(write_read,
 					BOOST_TEST_MESSAGE("PCA input directory: " << fxi.wd().path().string());
 					BOOST_TEST_MESSAGE("PCA output directory: " << fxo.wd().path().string());
 					
-					auto domain_num = mpi::size() > 1
-						? boost::optional<int>{mpi::rank()}
+					auto domain_num = mpi::comm_size() > 1
+						? boost::optional<int>{mpi::comm_rank()}
 						: boost::optional<int>{boost::none};
 					
 					std::vector<theta_field> local_series = hbrs::theta_utils::detail::make_theta_fields(local_dataset);
 					for(theta_field & field : local_series) {
-						if (mpi::size() > 1) {
+						if (mpi::comm_size() > 1) {
 							field.global_id() = std::vector<int>(hbrs::theta_utils::detail::local_size(local_series).m()/3, 0);
 						}
-						field.ndomains() = mpi::size();
+						field.ndomains() = mpi::comm_size();
 					}
 					
 					std::vector<theta_field_path> pca_input_paths =
@@ -250,8 +250,8 @@ BOOST_AUTO_TEST_CASE(write_read,
 				auto all_paths = find_theta_fields(fxo.wd().path(), fxo.prefix() + "_all");
 				auto paths = filter_theta_fields_by_domain_num(
 					all_paths,
-					mpi::size() > 1
-						? boost::optional<int>{mpi::rank()}
+					mpi::comm_size() > 1
+						? boost::optional<int>{mpi::comm_rank()}
 						: boost::optional<int>{boost::none}
 				);
 				

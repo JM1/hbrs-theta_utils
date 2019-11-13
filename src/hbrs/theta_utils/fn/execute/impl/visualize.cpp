@@ -48,16 +48,16 @@ execute(visualize_cmd cmd) {
 	
 	std::vector<theta_field_path> field_paths = filter_theta_fields_by_domain_num(
 		find_theta_fields(cmd.i_opts.path, cmd.i_opts.pval_prefix),
-		mpi::size() > 1
-			? boost::optional<int>{mpi::rank()}
+		mpi::comm_size() > 1
+			? boost::optional<int>{mpi::comm_rank()}
 			: boost::optional<int>{boost::none}
 	);
 	
-	if (field_paths.empty() && mpi::size() == 1) {
+	if (field_paths.empty() && mpi::comm_size() == 1) {
 		// if simulation was split among several processes but only one process was choosen for visalization
 		field_paths = filter_theta_fields_by_domain_num(
 			find_theta_fields(cmd.i_opts.path, cmd.i_opts.pval_prefix),
-			boost::optional<int>{mpi::rank()}
+			boost::optional<int>{mpi::comm_rank()}
 		);
 	}
 	

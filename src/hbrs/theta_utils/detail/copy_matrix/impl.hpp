@@ -167,8 +167,8 @@ iff(bool lhs, bool rhs);
 		}
 		#endif
 		
-		size_t mpi_sz = boost::numeric_cast<size_t>(mpi::size());
-		size_t mpi_rank = boost::numeric_cast<size_t>(mpi::rank());
+		size_t mpi_sz = boost::numeric_cast<size_t>(mpi::comm_size());
+		size_t mpi_rank = boost::numeric_cast<size_t>(mpi::comm_rank());
 		mpl::matrix_size<size_t, size_t> lcl_sz = local_size(from);
 		
 		/* Example for 3 processes:
@@ -451,8 +451,8 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 		}
 		#endif
 		
-		size_t mpi_sz = boost::numeric_cast<size_t>(mpi::size());
-		size_t mpi_rank = boost::numeric_cast<size_t>(mpi::rank());
+		size_t mpi_sz = boost::numeric_cast<size_t>(mpi::comm_size());
+		size_t mpi_rank = boost::numeric_cast<size_t>(mpi::comm_rank());
 		mpl::matrix_size<size_t, size_t> lcl_sz = local_size(to);
 		
 		size_t lcl_m = lcl_sz.m();
