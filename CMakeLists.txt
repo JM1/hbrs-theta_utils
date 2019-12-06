@@ -30,7 +30,7 @@ set_package_properties(hbrs-mpl PROPERTIES
     PURPOSE "Required for linear algebra algorithms."
     TYPE REQUIRED)
 
-find_package(Boost 1.62 COMPONENTS unit_test_framework system thread serialization chrono program_options filesystem iostreams regex exception signals)
+find_package(Boost 1.62 COMPONENTS unit_test_framework system thread serialization chrono program_options filesystem iostreams regex exception signals log)
 set_package_properties(Boost PROPERTIES
     PURPOSE "Required for meta programming, unit tests and others."
     TYPE REQUIRED)
@@ -160,6 +160,8 @@ function(hbrs_theta_utils_add_test target)
     target_include_directories(${target}
         SYSTEM
         PUBLIC ${Boost_INCLUDE_DIRS})
+
+    target_compile_definitions(${target} PUBLIC ${MPI_CXX_COMPILE_DEFINITIONS} BOOST_LOG_DYN_LINK)
 
     add_test(${target} ${CMAKE_CURRENT_BINARY_DIR}/${target})
     add_dependencies(tests ${target})

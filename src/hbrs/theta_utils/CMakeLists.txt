@@ -41,7 +41,7 @@ target_include_directories(hbrs_theta_utils
     PUBLIC ${VTK_INCLUDE_DIRS})
 
 target_compile_definitions(hbrs_theta_utils
-    PUBLIC ${MPI_CXX_COMPILE_DEFINITIONS})
+    PUBLIC ${MPI_CXX_COMPILE_DEFINITIONS} BOOST_LOG_DYN_LINK)
 
 set_target_properties(hbrs_theta_utils PROPERTIES
     COMPILE_FLAGS "${MPI_CXX_COMPILE_OPTIONS}"

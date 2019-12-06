@@ -20,10 +20,12 @@
 #include <hbrs/theta_utils/dt/exception.hpp>
 #include <hbrs/mpl/detail/environment.hpp>
 #include <hbrs/mpl/detail/mpi.hpp>
+#include <hbrs/mpl/detail/log.hpp>
 #include <hbrs/mpl/core/preprocessor.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 #include <hbrs/mpl/config.hpp>
 
+#include <boost/log/expressions.hpp>
 #include <boost/program_options.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/format.hpp>
@@ -37,6 +39,7 @@
 using namespace hbrs::theta_utils;
 namespace {
 namespace mpi = hbrs::mpl::detail::mpi;
+namespace log = boost::log;
 
 boost::variant<
 	help_cmd,
@@ -55,7 +58,12 @@ parse_options(int argc, char *argv[]) {
 	
 	bpo::options_description generic{"generic"};
 	generic.add_options()
-		("verbose,v", "verbose output");
+		(
+			"verbose,v",
+			bpo::value<int>()->implicit_value(1),
+			"enable verbosity, optionally specify this option several times to set one of the "\
+			"following severity levels: 1x := info / 2x := debug / 3x := trace / 0x := warning"
+		);
 	
 	bpo::options_description hidden;
 	hidden.add_options()
@@ -120,9 +128,12 @@ parse_options(int argc, char *argv[]) {
 	
 	/* Parse generic options */
 	generic_options g_opts;
-	g_opts.verbose = (vm.count("verbose") > 0);
-	g_opts.debug = (vm.count("debug") > 0);
 	
+	if (vm.count("verbose")) {
+		g_opts.verbosity = vm["verbose"].as<int>();
+	}
+	
+	g_opts.debug = (vm.count("debug") > 0);
 	
 	/* Parse commands */
 	
@@ -448,6 +459,39 @@ main(int argc, char *argv[]) {
 	
 	return boost::apply_visitor(
 		[](auto && cmd) {
+			// Ref.: https://github.com/boostorg/log/blob/develop/include/boost/log/trivial.hpp
+			// enum severity_level
+			// {
+			//     trace,
+			//     debug,
+			//     info,
+			//     warning,
+			//     error,
+			//     fatal
+			// };
+			switch(cmd.g_opts.verbosity) {
+				case 0:
+					log::core::get()->set_filter(
+						log::trivial::severity >= log::trivial::warning
+					);
+					break;
+				case 1:
+					log::core::get()->set_filter(
+						log::trivial::severity >= log::trivial::info
+					);
+					break;
+				case 2:
+					log::core::get()->set_filter(
+						log::trivial::severity >= log::trivial::debug
+					);
+					break;
+				default:
+					log::core::get()->set_filter(
+						log::trivial::severity >= log::trivial::trace
+					);
+					break;
+			}
+			
 			if (cmd.g_opts.debug) {
 				execute(cmd);
 			} else {

@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2018-2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,6 @@
 #include <hbrs/mpl/fn/less_equal.hpp>
 #include <hbrs/mpl/fn/greater_equal.hpp>
 
-
 #include <hbrs/mpl/config.hpp>
 #ifdef HBRS_MPL_ENABLE_MATLAB
     #include <hbrs/mpl/dt/ml_matrix.hpp>
@@ -45,6 +44,7 @@
 #endif
 
 #include <hbrs/mpl/detail/mpi.hpp>
+#include <hbrs/mpl/detail/log.hpp>
 
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/assert.hpp>
@@ -103,48 +103,6 @@ copy_matrix(std::vector<theta_field> const& from, To && to) {
 	return HBRS_MPL_FWD(to);
 }
 
-template<typename T>
-std::ostream &
-operator<<(std::ostream & o, std::vector<T> const& v) {
-	o << '[';
-	if (!v.empty()) {
-		o << "0:" << v[0];
-		for(std::size_t i = 1; i < v.size(); ++i) {
-			o << ", " << i << ':' << v[i];
-		}
-	}
-	o << ']';
-	return o;
-}
-
-#ifdef HBRS_MPL_ENABLE_ELEMENTAL
-template<typename T>
-std::ostream &
-operator<<(std::ostream & o, El::Matrix<T> const& m) {
-	El::Print(m, "Matrix", o);
-	return o;
-}
-
-template<typename T>
-std::ostream &
-operator<<(std::ostream & o, El::AbstractDistMatrix<T> const& m) {
-	El::Print(m, "DistMatrix", o);
-	return o;
-}
-#endif //!HBRS_MPL_ENABLE_ELEMENTAL
-
-template<typename T, typename... Ts>
-void
-debug_output(T && t, Ts && ... ts) {
-	#ifdef HBRS_THETA_UTILS_ENABLE_DEBUG_OUTPUT
-		std::cerr << HBRS_MPL_FWD(t);
-		if constexpr(sizeof...(ts) > 0) {
-			debug_output(HBRS_MPL_FWD(ts)...);
-		}
-		std::cerr << std::flush;
-	#endif // !HBRS_THETA_UTILS_ENABLE_DEBUG_OUTPUT
-}
-
 bool
 iff(bool lhs, bool rhs);
 
@@ -155,6 +113,7 @@ iff(bool lhs, bool rhs);
 		hbrs::mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT> && to
 	) {
 		using std::size_t;
+		using hbrs::mpl::detail::loggable;
 		
 		#if !defined(NDEBUG)
 		{
@@ -243,14 +202,14 @@ iff(bool lhs, bool rhs);
 		size_t lcl_n = lcl_sz.n();
 		std::vector<size_t> lcl_ms(mpi_sz, 0u);
 		mpi::allgather(&lcl_m, 1, lcl_ms.data(), 1, to.data().Grid().Comm().comm);
-		debug_output("lcl_ms:", lcl_ms, "@mpi_rank:", mpi_rank, '\n');
+		HBRS_MPL_LOG_TRIVIAL(trace) << "lcl_ms:" << loggable{lcl_ms} << "@mpi_rank:" << mpi_rank;
 		
 		std::vector<size_t> lcl_ms_sums(mpi_sz, 0u);
 		std::partial_sum(lcl_ms.begin(), lcl_ms.end(), lcl_ms_sums.begin());
-		debug_output("lcl_ms_sums:", lcl_ms_sums, "@mpi_rank:", mpi_rank, '\n');
+		HBRS_MPL_LOG_TRIVIAL(trace) << "lcl_ms_sums:" << loggable{lcl_ms_sums} << "@mpi_rank:" << mpi_rank;
 		
 		size_t gbl_m = lcl_ms_sums.back();
-		debug_output("gbl_m:", gbl_m, "@mpi_rank:", mpi_rank, '\n');
+		HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_m:" << gbl_m << "@mpi_rank:" << mpi_rank;
 		
 		size_t balanced_chunk_size = gbl_m / mpi_sz; // integer division
 		size_t nr_of_bigger_chunks = gbl_m % mpi_sz; // number of processes that get chunks of size=chunk_size+1
@@ -267,8 +226,8 @@ iff(bool lhs, bool rhs);
 		std::vector<size_t> bal_lcl_ms_sums(mpi_sz, 0u);
 		std::partial_sum(bal_lcl_ms.begin(), bal_lcl_ms.end(), bal_lcl_ms_sums.begin());
 		
-		debug_output("bal_lcl_ms:", bal_lcl_ms, "@mpi_rank:", mpi_rank, '\n');
-		debug_output("bal_lcl_ms_sums:", bal_lcl_ms_sums, "@mpi_rank:", mpi_rank, '\n');
+		HBRS_MPL_LOG_TRIVIAL(trace) << "bal_lcl_ms:" << loggable{bal_lcl_ms} << "@mpi_rank:" << mpi_rank;
+		HBRS_MPL_LOG_TRIVIAL(trace) << "bal_lcl_ms_sums:" << loggable{bal_lcl_ms_sums} << "@mpi_rank:" << mpi_rank;
 		
 		size_t bal_lcl_m = bal_lcl_ms.at(mpi_rank);
 		mpl::rtsam<double, mpl::storage_order::row_major> bal_lcl_to =
@@ -299,18 +258,18 @@ iff(bool lhs, bool rhs);
 				// round robin distribution
 				size_t lcl_recv_row = gbl_row / mpi_sz;
 				
-				debug_output("gbl_row:", gbl_row, ",send_proc:",send_proc, ",recv_proc:", recv_proc, "@mpi_rank:", mpi_rank, '\n');
-				debug_output("gbl_row:", gbl_row, ",lcl_send_row:",lcl_send_row, ",lcl_recv_row:", lcl_recv_row, "@mpi_rank:", mpi_rank, '\n');
+				HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_row:" << gbl_row << ",send_proc:" << send_proc << ",recv_proc:" << recv_proc << "@mpi_rank:" << mpi_rank;
+				HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_row:" << gbl_row << ",lcl_send_row:" << lcl_send_row << ",lcl_recv_row:" << lcl_recv_row << "@mpi_rank:" << mpi_rank;
 				
 				if ((send_proc == recv_proc) && (send_proc == mpi_rank)) {
-					debug_output("gbl_row:", gbl_row, ", COPY", "@mpi_rank:", mpi_rank, '\n');
+					HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_row:" << gbl_row << ", COPY" << "@mpi_rank:" << mpi_rank;
 					
 					double const& lcl_send_ref = lcl_to.at(mpl::make_matrix_index(lcl_send_row, 0));
 					double      & lcl_recv_ref = bal_lcl_to.at(mpl::make_matrix_index(lcl_recv_row, 0));
 					std::copy_n(&lcl_send_ref, lcl_n, &lcl_recv_ref);
 					
 				} else if (send_proc == mpi_rank) {
-					debug_output("gbl_row:", gbl_row, ", SEND_ROW", "@mpi_rank:", mpi_rank, '\n');
+					HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_row:" << gbl_row << ", SEND_ROW" << "@mpi_rank:" << mpi_rank;
 					
 					double const& lcl_send_ref = lcl_to.at(mpl::make_matrix_index(lcl_send_row, 0));
 					reqs.push_back(
@@ -323,7 +282,7 @@ iff(bool lhs, bool rhs);
 						)
 					);
 				} else if (recv_proc == mpi_rank) {
-					debug_output("gbl_row:", gbl_row, ", RECV_ROW", "@mpi_rank:", mpi_rank, '\n');
+					HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_row:" << gbl_row << ", RECV_ROW" << "@mpi_rank:" << mpi_rank;
 					
 					double & lcl_recv_ref = bal_lcl_to.at(mpl::make_matrix_index(lcl_recv_row, 0));
 					reqs.push_back(
@@ -336,16 +295,16 @@ iff(bool lhs, bool rhs);
 						)
 					);
 				} else {
-					debug_output("gbl_row:", gbl_row, ", SKIP", "@mpi_rank:", mpi_rank, '\n');
+					HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_row:" << gbl_row << ", SKIP" << "@mpi_rank:" << mpi_rank;
 				}
 			}
 			
 			for(size_t i = 0; i < reqs.size(); ++i) {
-				debug_output("reqs[", i, "], WAIT_BEGIN", "@mpi_rank:", mpi_rank, '\n');
+				HBRS_MPL_LOG_TRIVIAL(trace) << "reqs[" << i << "], WAIT_BEGIN" << "@mpi_rank:" << mpi_rank;
 				
 				[[maybe_unused]] auto stat = mpi::wait(reqs[i]);
 				//TODO: Do anything with stat?
-				debug_output("reqs[", i, "], WAIT_END", "@mpi_rank:", mpi_rank, '\n');
+				HBRS_MPL_LOG_TRIVIAL(trace) << "reqs[" << i << "], WAIT_END" << "@mpi_rank:" << mpi_rank;
 			}
 		}
 		
@@ -361,7 +320,7 @@ iff(bool lhs, bool rhs);
 			BOOST_ASSERT(iff(is_lcl_row, gbl_to.IsLocalRow(gbl_row)));
 			
 			if (is_lcl_row) {
-				debug_output("lcl_row:", lcl_row, "@mpi_rank:", mpi_rank, '\n');
+				HBRS_MPL_LOG_TRIVIAL(trace) << "lcl_row:" << lcl_row << "@mpi_rank:" << mpi_rank;
 				
 				for(size_t col = 0; col < lcl_n; ++col) {
 					BOOST_ASSERT(gbl_to.IsLocal(gbl_row, col));
@@ -374,11 +333,11 @@ iff(bool lhs, bool rhs);
 				}
 			}
 			
-			debug_output("lcl_to:", lcl_to, "@mpi_rank:", mpi_rank, '\n');
-			debug_output("gbl_to:", gbl_to, "@mpi_rank:", mpi_rank, '\n');
+			HBRS_MPL_LOG_TRIVIAL(trace) << "lcl_to:" << loggable{lcl_to} << "@mpi_rank:" << mpi_rank;
+			HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_to:" << loggable{gbl_to} << "@mpi_rank:" << mpi_rank;
 		}
 		
-		debug_output("DONE@mpi_rank:", mpi_rank, '\n');
+		HBRS_MPL_LOG_TRIVIAL(trace) << "DONE@mpi_rank:" << mpi_rank;
 		return HBRS_MPL_FWD(to);
 	}
 #endif
@@ -440,6 +399,8 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 		hbrs::mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT> const& from,
 		std::vector<theta_field> & to
 	) {
+		using hbrs::mpl::detail::loggable;
+		
 		#if !defined(NDEBUG)
 		{
 			mpl::matrix_size<std::size_t, std::size_t> from_sz = {from.size()};
@@ -459,14 +420,14 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 		size_t lcl_n = lcl_sz.n();
 		std::vector<size_t> lcl_ms(mpi_sz, 0u);
 		mpi::allgather(&lcl_m, 1, lcl_ms.data(), 1, from.data().Grid().Comm().comm);
-		debug_output("lcl_ms:", lcl_ms, "@mpi_rank:", mpi_rank, '\n');
+		HBRS_MPL_LOG_TRIVIAL(trace) << "lcl_ms:" << loggable{lcl_ms} << "@mpi_rank:" << mpi_rank;
 		
 		std::vector<size_t> lcl_ms_sums(mpi_sz, 0u);
 		std::partial_sum(lcl_ms.begin(), lcl_ms.end(), lcl_ms_sums.begin());
-		debug_output("lcl_ms_sums:", lcl_ms_sums, "@mpi_rank:", mpi_rank, '\n');
+		HBRS_MPL_LOG_TRIVIAL(trace) << "lcl_ms_sums:" << loggable{lcl_ms_sums} << "@mpi_rank:" << mpi_rank;
 		
 		size_t gbl_m = lcl_ms_sums.back();
-		debug_output("gbl_m:", gbl_m, "@mpi_rank:", mpi_rank, '\n');
+		HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_m:" << gbl_m << "@mpi_rank:" << mpi_rank;
 		
 		size_t balanced_chunk_size = gbl_m / mpi_sz; // integer division
 		size_t nr_of_bigger_chunks = gbl_m % mpi_sz; // number of processes that get chunks of size=chunk_size+1
@@ -483,8 +444,8 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 		std::vector<size_t> bal_lcl_ms_sums(mpi_sz, 0u);
 		std::partial_sum(bal_lcl_ms.begin(), bal_lcl_ms.end(), bal_lcl_ms_sums.begin());
 		
-		debug_output("bal_lcl_ms:", bal_lcl_ms, "@mpi_rank:", mpi_rank, '\n');
-		debug_output("bal_lcl_ms_sums:", bal_lcl_ms_sums, "@mpi_rank:", mpi_rank, '\n');
+		HBRS_MPL_LOG_TRIVIAL(trace) << "bal_lcl_ms:" << loggable{bal_lcl_ms} << "@mpi_rank:" << mpi_rank;
+		HBRS_MPL_LOG_TRIVIAL(trace) << "bal_lcl_ms_sums:" << loggable{bal_lcl_ms_sums} << "@mpi_rank:" << mpi_rank;
 		
 		size_t bal_lcl_m = bal_lcl_ms.at(mpi_rank);
 		mpl::rtsam<double, mpl::storage_order::row_major> bal_lcl_from =
@@ -501,7 +462,7 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 			BOOST_ASSERT(iff(is_lcl_row, gbl_from.IsLocalRow(gbl_row)));
 			
 			if (is_lcl_row) {
-				debug_output("lcl_row:", lcl_row, "@mpi_rank:", mpi_rank, '\n');
+				HBRS_MPL_LOG_TRIVIAL(trace) << "lcl_row:" << lcl_row << "@mpi_rank:" << mpi_rank;
 				
 				for(size_t col = 0; col < lcl_n; ++col) {
 					BOOST_ASSERT(gbl_from.IsLocal(gbl_row, col));
@@ -541,18 +502,18 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 				// round robin distribution
 				size_t lcl_send_row = gbl_row / mpi_sz;
 				
-				debug_output("gbl_row:", gbl_row, ",send_proc:",send_proc, ",recv_proc:", recv_proc, "@mpi_rank:", mpi_rank, '\n');
-				debug_output("gbl_row:", gbl_row, ",lcl_send_row:",lcl_send_row, ",lcl_recv_row:", lcl_recv_row, "@mpi_rank:", mpi_rank, '\n');
+				HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_row:" << gbl_row << ",send_proc:" << send_proc << ",recv_proc:" << recv_proc << "@mpi_rank:" << mpi_rank;
+				HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_row:" << gbl_row << ",lcl_send_row:" << lcl_send_row << ",lcl_recv_row:" << lcl_recv_row << "@mpi_rank:" << mpi_rank;
 				
 				if ((send_proc == recv_proc) && (send_proc == mpi_rank)) {
-					debug_output("gbl_row:", gbl_row, ", COPY", "@mpi_rank:", mpi_rank, '\n');
+					HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_row:" << gbl_row << ", COPY" << "@mpi_rank:" << mpi_rank;
 					
 					double       & lcl_recv_ref = lcl_to.at(mpl::make_matrix_index(lcl_recv_row, 0));
 					double const & lcl_send_ref = bal_lcl_from.at(mpl::make_matrix_index(lcl_send_row, 0));
 					std::copy_n(&lcl_send_ref, lcl_n, &lcl_recv_ref);
 					
 				} else if (send_proc == mpi_rank) {
-					debug_output("gbl_row:", gbl_row, ", SEND_ROW", "@mpi_rank:", mpi_rank, '\n');
+					HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_row:" << gbl_row << ", SEND_ROW" << "@mpi_rank:" << mpi_rank;
 					
 					double const& lcl_send_ref = bal_lcl_from.at(mpl::make_matrix_index(lcl_send_row, 0));
 					reqs.push_back(
@@ -565,7 +526,7 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 						)
 					);
 				} else if (recv_proc == mpi_rank) {
-					debug_output("gbl_row:", gbl_row, ", RECV_ROW", "@mpi_rank:", mpi_rank, '\n');
+					HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_row:" << gbl_row << ", RECV_ROW" << "@mpi_rank:" << mpi_rank;
 					
 					double & lcl_recv_ref = lcl_to.at(mpl::make_matrix_index(lcl_recv_row, 0));
 					
@@ -579,22 +540,22 @@ copy_matrix(From const& from, std::vector<theta_field> & to) {
 						)
 					);
 				} else {
-					debug_output("gbl_row:", gbl_row, ", SKIP", "@mpi_rank:", mpi_rank, '\n');
+					HBRS_MPL_LOG_TRIVIAL(trace) << "gbl_row:" << gbl_row << ", SKIP" << "@mpi_rank:" << mpi_rank;
 				}
 			}
 			
 			for(size_t i = 0; i < reqs.size(); ++i) {
-				debug_output("reqs[", i, "], WAIT_BEGIN", "@mpi_rank:", mpi_rank, '\n');
+				HBRS_MPL_LOG_TRIVIAL(trace) << "reqs[" << i << "], WAIT_BEGIN" << "@mpi_rank:" << mpi_rank;
 				
 				[[maybe_unused]] auto stat = mpi::wait(reqs[i]);
 				//TODO: Do anything with stat?
-				debug_output("reqs[", i, "], WAIT_END", "@mpi_rank:", mpi_rank, '\n');
+				HBRS_MPL_LOG_TRIVIAL(trace) << "reqs[" << i << "], WAIT_END" << "@mpi_rank:" << mpi_rank;
 			}
 			
 			to = copy_matrix(lcl_to, to);
 		}
 		
-		debug_output("DONE@mpi_rank:", mpi_rank, '\n');
+		HBRS_MPL_LOG_TRIVIAL(trace) << "DONE@mpi_rank:" << mpi_rank;
 		return HBRS_MPL_FWD(to);
 		
 		

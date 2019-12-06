@@ -29,6 +29,7 @@
 #include <hbrs/mpl/dt/ctsav.hpp>
 #include <hbrs/mpl/dt/storage_order.hpp>
 #include <hbrs/mpl/detail/test.hpp>
+#include <hbrs/mpl/detail/log.hpp>
 
 #include <hbrs/theta_utils/detail/copy_matrix.hpp>
 #include <hbrs/theta_utils/detail/make_theta_fields.hpp>
@@ -53,6 +54,7 @@ BOOST_TEST_GLOBAL_FIXTURE(environment_fixture);
 BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 	using namespace hbrs::theta_utils;
 	using namespace hbrs::theta_utils::detail;
+	using hbrs::mpl::detail::loggable;
 	
 	static constexpr auto datasets = hana::make_tuple(
 		mpl::make_sm(
@@ -134,9 +136,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 							)
 						);
 						
-						#if !defined(NDEBUG)
-							El::Print(r.data(), "r:");
-						#endif
+						HBRS_MPL_LOG_TRIVIAL(trace) << "r:" << loggable{r};
 						
 						HBRS_MPL_TEST_MMEQ(dataset, r, false);
 					} else if constexpr(decltype(tag){} == hana::type_c<mpl::el_dist_matrix_tag>) {
@@ -164,9 +164,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 									)
 								);
 							
-							#if !defined(NDEBUG)
-								El::Print(dist_vc_star.data(), "dist_vc_star:");
-							#endif
+							HBRS_MPL_LOG_TRIVIAL(trace) << "dist_vc_star:" << loggable{dist_vc_star};
 							
 							/* compare complete matrix */
 							mpl::el_matrix<double> single = detail::copy_matrix(
@@ -192,9 +190,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 								El::Copy(single.data(), view);
 							}
 							
-							#if !defined(NDEBUG)
-								El::Print(concat.data(), "concat:");
-							#endif
+							HBRS_MPL_LOG_TRIVIAL(trace) << "concat:" << loggable{concat};
 							
 							HBRS_MPL_TEST_MMEQ(concat, dist_vc_star, false);
 							
@@ -208,9 +204,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 								)
 							);
 							
-							#if !defined(NDEBUG)
-								El::Print(local.data(), "local:");
-							#endif
+							HBRS_MPL_LOG_TRIVIAL(trace) << "local:" << loggable{local};
 							
 							HBRS_MPL_TEST_MMEQ(dataset, local, false);
 						}
@@ -218,9 +212,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 							/* differently-sized submatrices */
 							mpl::el_matrix<double> untouched = mpl::make_el_matrix(dataset);
 							
-							#if !defined(NDEBUG)
-								El::Print(untouched.data(), std::string("untouched at mpi_rank ") + boost::lexical_cast<std::string>(mpi::comm_rank()) + std::string(":") );
-							#endif
+							HBRS_MPL_LOG_TRIVIAL(trace) << "untouched at mpi_rank " << mpi::comm_rank() << ":" << loggable{untouched};
 							
 							std::random_device rd;
 							std::mt19937 mt(rd());
@@ -241,9 +233,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 								El::ALL
 							);
 							
-							#if !defined(NDEBUG)
-								El::Print(truncated.data(), std::string("truncated at mpi_rank ") + boost::lexical_cast<std::string>(mpi::comm_rank()) + std::string(":") );
-							#endif
+							HBRS_MPL_LOG_TRIVIAL(trace) << "truncated at mpi_rank " << mpi::comm_rank() << ":" << loggable{truncated};
 							std::vector<theta_field> series = detail::make_theta_fields(
 								mpl::rtsam<double, mpl::storage_order::row_major>{(*mpl::size)(truncated)}
 							);
@@ -265,9 +255,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 									)
 								);
 							
-							#if !defined(NDEBUG)
-								El::Print(dist_vc_star.data(), "dist_vc_star:");
-							#endif
+							HBRS_MPL_LOG_TRIVIAL(trace) << "dist_vc_star:" << loggable{dist_vc_star};
 							
 							/* compare local matrix */
 							detail::copy_matrix(dist_vc_star, series);
@@ -279,9 +267,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 								)
 							);
 							
-							#if !defined(NDEBUG)
-								El::Print(local.data(), "local:");
-							#endif
+							HBRS_MPL_LOG_TRIVIAL(trace) << "local:" << loggable{local};
 							
 							HBRS_MPL_TEST_MMEQ(truncated, local, false);
 						}

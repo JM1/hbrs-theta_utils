@@ -26,7 +26,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
 struct generic_options {
-	bool verbose = false;
+	std::size_t verbosity = 0;
 	bool debug = false;
 };
 
