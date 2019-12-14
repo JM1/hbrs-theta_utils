@@ -1073,8 +1073,9 @@ convert_to_vtk(
 		}
 	}
 	
-	// write pvd file for easier ParaView usage if output was in xml and we are MPI_ROOT process
-	if (format == vtk_file_format::xml_binary && (mpi::comm_rank() == MPI_ROOT)) {
+	// let one process write a pvd file for easier ParaView usage
+	// NOTE: A pvd file only works for xml output files
+	if (format == vtk_file_format::xml_binary && (mpi::comm_rank() == 0)) {
 		std::vector<fs::path> vtk_plain_paths = (*mpl::transform)(
 			vtk_paths,
 			[](vtk_path path) { return path.full_path(); }
