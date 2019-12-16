@@ -11,4 +11,4 @@ target_sources(hbrs_theta_utils PRIVATE
 
 #################### tests ####################
 
-hbrs_theta_utils_add_test(detail_copy_matrix "test.cpp")
+hbrs_theta_utils_add_test(detail_matrix "test.cpp")

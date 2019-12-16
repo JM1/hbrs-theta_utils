@@ -14,10 +14,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_HPP
-#define HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_HPP
+#ifndef HBRS_THETA_UTILS_DT_THETA_FIELD_MATRIX_HPP
+#define HBRS_THETA_UTILS_DT_THETA_FIELD_MATRIX_HPP
 
-#include "copy_matrix/fwd.hpp"
-#include "copy_matrix/impl.hpp"
+#include "theta_field_matrix/fwd.hpp"
+#include "theta_field_matrix/impl.hpp"
 
-#endif // !HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_HPP
+#endif // !HBRS_THETA_UTILS_DT_THETA_FIELD_MATRIX_HPP

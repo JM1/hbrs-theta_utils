@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define BOOST_TEST_MODULE detail_copy_matrix_test
+#define BOOST_TEST_MODULE detail_gather_test
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 
@@ -30,10 +30,16 @@
 #include <hbrs/mpl/dt/storage_order.hpp>
 #include <hbrs/mpl/detail/test.hpp>
 #include <hbrs/mpl/detail/log.hpp>
+#include <hbrs/mpl/detail/mpi.hpp>
 
-#include <hbrs/theta_utils/detail/copy_matrix.hpp>
-#include <hbrs/theta_utils/detail/make_theta_fields.hpp>
-#include <hbrs/theta_utils/dt/theta_field.hpp>
+#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+    #include <hbrs/mpl/dt/el_dist_matrix.hpp>
+#endif // !HBRS_MPL_ENABLE_ELEMENTAL
+
+#include <hbrs/theta_utils/detail/gather.hpp>
+#include <hbrs/theta_utils/detail/scatter.hpp>
+#include <hbrs/theta_utils/detail/matrix.hpp>
+#include <hbrs/theta_utils/dt/theta_field_matrix.hpp>
 
 #include <boost/hana/tuple.hpp>
 #include <boost/hana/for_each.hpp>
@@ -46,15 +52,16 @@
 namespace utf = boost::unit_test;
 namespace tt = boost::test_tools;
 
-BOOST_AUTO_TEST_SUITE(detail_copy_matrix_test)
+BOOST_AUTO_TEST_SUITE(detail_gather_test)
 
 using hbrs::mpl::detail::environment_fixture;
 BOOST_TEST_GLOBAL_FIXTURE(environment_fixture);
 
-BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
+BOOST_AUTO_TEST_CASE(gather_, * utf::tolerance(0.000000001)) {
 	using namespace hbrs::theta_utils;
 	using namespace hbrs::theta_utils::detail;
 	using hbrs::mpl::detail::loggable;
+	namespace mpi = hbrs::mpl::detail::mpi;
 	
 	static constexpr auto datasets = hana::make_tuple(
 		mpl::make_sm(
@@ -79,90 +86,38 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 		)
 	);
 	
-	#if defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL)
+	#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 	std::size_t dataset_nr = 0;
 	hana::for_each(datasets, [&dataset_nr](auto const& dataset) {
 		BOOST_TEST_MESSAGE("dataset_nr=" << dataset_nr);
 		
 		hana::for_each(
 			hana::make_tuple(
-				#ifdef HBRS_MPL_ENABLE_MATLAB
-					hana::type_c<mpl::ml_matrix_tag>
-				#endif
-				#if defined(HBRS_MPL_ENABLE_MATLAB) && defined(HBRS_MPL_ENABLE_ELEMENTAL)
-					,
-				#endif
 				#ifdef HBRS_MPL_ENABLE_ELEMENTAL
-					hana::type_c<mpl::el_matrix_tag>,
 					hana::type_c<mpl::el_dist_matrix_tag>
-				#endif
+				#endif // !HBRS_MPL_ENABLE_ELEMENTAL
 			),
 			[&dataset](auto tag) {
 				BOOST_ASSERT(3u <= (*mpl::m)(mpl::size(dataset)));
 				
-				#ifdef HBRS_MPL_ENABLE_MATLAB
-					if constexpr(decltype(tag){} == hana::type_c<mpl::ml_matrix_tag>) {
-						if (mpi::comm_size() > 1 && mpi::comm_rank() != MPI_ROOT) { return; }
-						BOOST_TEST_MESSAGE("matlab_lapack");
-						std::vector<theta_field> series = detail::make_theta_fields(
-							mpl::rtsam<double, mpl::storage_order::row_major>{(*mpl::size)(dataset)}
-						);
-						detail::copy_matrix(mpl::make_ml_matrix(dataset), series);
-						
-						auto r = detail::copy_matrix(
-							series,
-							mpl::make_ml_matrix(
-								hana::type_c<double>,
-								mpl::matrix_size<int, int>{ detail::global_size(series) }
-							)
-						);
-						HBRS_MPL_TEST_MMEQ(dataset, r, false);
-					} else 
-				#endif // !HBRS_MPL_ENABLE_MATLAB
 				#ifdef HBRS_MPL_ENABLE_ELEMENTAL
-					if constexpr(decltype(tag){} == hana::type_c<mpl::el_matrix_tag>) {
-						if (mpi::comm_size() > 1 && mpi::comm_rank() != MPI_ROOT) { return; }
-						BOOST_TEST_MESSAGE("elemental_openmp");
-						std::vector<theta_field> series = detail::make_theta_fields(
-							mpl::rtsam<double, mpl::storage_order::row_major>{(*mpl::size)(dataset)}
-						);
-						detail::copy_matrix(mpl::make_el_matrix(dataset), series);
-						
-						auto r = detail::copy_matrix(
-							series,
-							mpl::make_el_matrix(
-								hana::type_c<double>,
-								mpl::matrix_size<El::Int, El::Int>{ detail::global_size(series) }
-							)
-						);
-						
-						HBRS_MPL_LOG_TRIVIAL(trace) << "r:" << loggable{r};
-						
-						HBRS_MPL_TEST_MMEQ(dataset, r, false);
-					} else if constexpr(decltype(tag){} == hana::type_c<mpl::el_dist_matrix_tag>) {
+					if constexpr(decltype(tag){} == hana::type_c<mpl::el_dist_matrix_tag>) {
 						BOOST_TEST_MESSAGE("elemental_mpi");
 						{
 							/* equally-sized submatrices */
-							std::vector<theta_field> series = detail::make_theta_fields(
+							theta_field_matrix series = make_theta_field_matrix(
 								mpl::rtsam<double, mpl::storage_order::row_major>{(*mpl::size)(dataset)}
 							);
 							detail::copy_matrix(mpl::make_el_matrix(dataset), series);
 							
 							static El::Grid const grid{El::mpi::COMM_WORLD};
-							mpl::el_dist_matrix<double, El::VC, El::STAR> dist_vc_star =
-								detail::copy_matrix(
-									series, 
-									mpl::make_el_dist_matrix(
-										grid,
-										hana::type_c<double>,
-										mpl::make_matrix_distribution(
-											hana::integral_constant<El::Dist, El::VC>{},
-											hana::integral_constant<El::Dist, El::STAR>{},
-											hana::integral_constant<El::DistWrap, El::ELEMENT>{}
-										),
-										mpl::matrix_size<El::Int, El::Int> { detail::global_size(series) }
-									)
-								);
+							auto dist_vc_star =
+								detail::scatter(series, detail::scatter_control<detail::theta_field_distribution_1>{{}});
+							
+							static_assert(std::is_same_v<
+								decltype(dist_vc_star),
+								mpl::el_dist_matrix<double, El::VC, El::STAR>
+							>, "");
 							
 							HBRS_MPL_LOG_TRIVIAL(trace) << "dist_vc_star:" << loggable{dist_vc_star};
 							
@@ -171,7 +126,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 								series,
 								mpl::make_el_matrix(
 									hana::type_c<double>,
-									mpl::matrix_size<El::Int, El::Int>{ detail::local_size(series) }
+									mpl::matrix_size<El::Int, El::Int>{ series.size() }
 								)
 							);
 							
@@ -195,12 +150,18 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 							HBRS_MPL_TEST_MMEQ(concat, dist_vc_star, false);
 							
 							/* compare local matrix */
-							detail::copy_matrix(dist_vc_star, series);
+							series = detail::gather(
+								dist_vc_star,
+								detail::gather_control<
+									detail::theta_field_distribution_1,
+									mpl::matrix_size<std::size_t, std::size_t>
+								>{{}, series.size()}
+							);
 							mpl::el_matrix<double> local = detail::copy_matrix(
 								series,
 								mpl::make_el_matrix(
 									hana::type_c<double>,
-									mpl::matrix_size<El::Int, El::Int>{ detail::local_size(series) }
+									mpl::matrix_size<El::Int, El::Int>{ series.size() }
 								)
 							);
 							
@@ -234,36 +195,30 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 							);
 							
 							HBRS_MPL_LOG_TRIVIAL(trace) << "truncated at mpi_rank " << mpi::comm_rank() << ":" << loggable{truncated};
-							std::vector<theta_field> series = detail::make_theta_fields(
+							theta_field_matrix series = make_theta_field_matrix(
 								mpl::rtsam<double, mpl::storage_order::row_major>{(*mpl::size)(truncated)}
 							);
 							detail::copy_matrix(truncated, series);
 							
 							static El::Grid const grid{El::mpi::COMM_WORLD};
 							mpl::el_dist_matrix<double, El::VC, El::STAR> dist_vc_star =
-								detail::copy_matrix(
-									series, 
-									mpl::make_el_dist_matrix(
-										grid,
-										hana::type_c<double>,
-										mpl::make_matrix_distribution(
-											hana::integral_constant<El::Dist, El::VC>{},
-											hana::integral_constant<El::Dist, El::STAR>{},
-											hana::integral_constant<El::DistWrap, El::ELEMENT>{}
-										),
-										mpl::matrix_size<El::Int, El::Int> { detail::global_size(series) }
-									)
-								);
+								detail::scatter(series, detail::scatter_control<detail::theta_field_distribution_1>{{}});
 							
 							HBRS_MPL_LOG_TRIVIAL(trace) << "dist_vc_star:" << loggable{dist_vc_star};
 							
 							/* compare local matrix */
-							detail::copy_matrix(dist_vc_star, series);
+							series = detail::gather(
+								dist_vc_star,
+								detail::gather_control<
+									detail::theta_field_distribution_1,
+									mpl::matrix_size<std::size_t, std::size_t>
+								>{{}, series.size()}
+							);
 							mpl::el_matrix<double> local = detail::copy_matrix(
 								series,
 								mpl::make_el_matrix(
 									hana::type_c<double>,
-									mpl::matrix_size<El::Int, El::Int>{ detail::local_size(series) }
+									mpl::matrix_size<El::Int, El::Int>{ series.size() }
 								)
 							);
 							
@@ -280,7 +235,7 @@ BOOST_AUTO_TEST_CASE(copy_matrix_, * utf::tolerance(0.000000001)) {
 		);
 		++dataset_nr;
 	});
-	#endif
+	#endif // !HBRS_MPL_ENABLE_ELEMENTAL
 }
 
 BOOST_AUTO_TEST_SUITE_END()

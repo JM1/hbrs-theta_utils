@@ -19,8 +19,11 @@
 #include <hbrs/theta_utils/dt/command.hpp>
 #include <hbrs/theta_utils/dt/command_option.hpp>
 #include <hbrs/theta_utils/dt/theta_field.hpp>
+#include <hbrs/theta_utils/dt/theta_field_matrix.hpp>
 #include <hbrs/theta_utils/detail/int_ranges.hpp>
-#include <hbrs/theta_utils/detail/copy_matrix.hpp>
+#include <hbrs/theta_utils/detail/matrix.hpp>
+#include <hbrs/theta_utils/detail/scatter.hpp>
+#include <hbrs/theta_utils/detail/gather.hpp>
 #include <hbrs/mpl/dt/pca_filter_result.hpp>
 #include <hbrs/mpl/dt/pca_control.hpp>
 
@@ -32,6 +35,7 @@
 #include <hbrs/mpl/fn/n.hpp>
 
 #include <hbrs/mpl/detail/mpi.hpp>
+#include <hbrs/mpl/detail/log.hpp>
 #include <hbrs/theta_utils/dt/exception.hpp>
 
 #include <boost/numeric/conversion/cast.hpp>
@@ -153,141 +157,159 @@ write_stats(
 // 	return std::make_tuple(unzipped1, unzipped2);
 // }
 
+template<typename T>
+struct tag_of;
+
+template <typename T>
+using tag_of_t = typename tag_of<T>::type;
+
 #ifdef HBRS_MPL_ENABLE_MATLAB
-	auto
-	init_matrix(matlab_lapack_backend, mpl::matrix_size<int, int> sz) {
-		BOOST_ASSERT(mpi::comm_size() == 1);
-		return mpl::make_ml_matrix(hana::type_c<double>, sz);
-	}
-#endif
+template<>
+struct tag_of< hbrs::theta_utils::matlab_lapack_backend > {
+	using type = hbrs::mpl::ml_matrix_tag;
+};
+#endif // !HBRS_MPL_ENABLE_MATLAB
 
 #ifdef HBRS_MPL_ENABLE_ELEMENTAL
-	auto
-	init_matrix(elemental_openmp_backend, mpl::matrix_size<El::Int, El::Int> sz) {
-		BOOST_ASSERT(mpi::comm_size() == 1);
-		return mpl::make_el_matrix(hana::type_c<double>, sz);
-	}
+template<>
+struct tag_of< elemental_openmp_backend > {
+	using type = hbrs::mpl::el_matrix_tag;
+};
 
-	auto
-	init_matrix(elemental_mpi_backend, mpl::matrix_size<El::Int, El::Int> sz) {
-		static El::Grid const grid{El::mpi::COMM_WORLD};
-		return mpl::make_el_dist_matrix(
-			grid,
-			hana::type_c<double>,
-			mpl::make_matrix_distribution(
-				hana::integral_constant<El::Dist, El::VC>{},
-				hana::integral_constant<El::Dist, El::STAR>{},
-				hana::integral_constant<El::DistWrap, El::ELEMENT>{}
-			),
-			sz
-		);
-	}
-#endif
+template<>
+struct tag_of< elemental_mpi_backend > {
+	using type = hbrs::mpl::el_dist_matrix_tag;
+};
+#endif // !HBRS_MPL_ENABLE_ELEMENTAL
 
 #if defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL)
-	template<
-		typename From,
-		typename std::enable_if_t<
-			#ifdef HBRS_MPL_ENABLE_MATLAB
-				std::is_same< hana::tag_of_t<From>, mpl::ml_column_vector_tag >::value ||
-			#endif
-			#ifdef HBRS_MPL_ENABLE_ELEMENTAL
-				std::is_same< hana::tag_of_t<From>, mpl::el_column_vector_tag >::value ||
-			#endif
-			false
-		>* = nullptr
-	>
-	auto
-	to_std_vector(From const& from) {
-		std::size_t from_sz = boost::numeric_cast<std::size_t>((*mpl::size)(from));
-		std::vector<double> to;
-		to.resize(from_sz);
-		BOOST_ASSERT(to.size() == from_sz);
-		
-		for (std::size_t i = 0; i < from_sz; ++i) {
-			to.at(i) = boost::numeric_cast<double>((*mpl::at)(from, i));
-		}
-		
-		return to;
-	}
-#endif
+template<typename Matrix>
+decltype(auto)
+transpose_reduce_transpose(
+	Matrix && data,
+	std::function<bool(std::size_t)> keep,
+	mpl::pca_control<bool,bool,bool> ctrl
+) {
+	
+	// NOTE: in our data matrix, rows correspond to variables and columns correspond to observations,
+	//       but in pca it is vice versa.
+	decltype(auto) r = mpl::pca_filter(mpl::transpose(HBRS_MPL_FWD(data)), keep, ctrl);
+	
+	return mpl::make_pca_filter_result(
+		mpl::transpose(HBRS_MPL_FWD(r).data()),
+		HBRS_MPL_FWD(r).latent()
+	);
+}
+#endif // !( defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL) )
 
 #ifdef HBRS_MPL_ENABLE_ELEMENTAL
-	template<typename Ring, El::Dist Columnwise, El::Dist Rowwise, El::DistWrap Wrapping>
-	auto
-	to_std_vector(mpl::el_dist_column_vector<Ring, Columnwise, Rowwise, Wrapping> const& from) {
-		typedef std::decay_t<Ring> _Ring_;
+template<
+	typename Backend,
+	typename std::enable_if_t<
+		std::is_same_v< Backend, elemental_mpi_backend >
+	>* = nullptr
+>
+mpl::pca_filter_result<
+	theta_field_matrix /* data */,
+	std::vector<double> /* latent*/
+>
+distributed_reduce(
+	theta_field_matrix series,
+	Backend,
+	std::function<bool(std::size_t)> keep,
+	mpl::pca_control<bool,bool,bool> ctrl
+) {
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:begin";
+	auto series_sz = series.size();
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:scatter";
+	auto distributed = scatter(
+		std::move(series),
+		detail::scatter_control<detail::theta_field_distribution_1>{{}}
+	);
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:transpose_reduce_transpose";
+	auto filtered = transpose_reduce_transpose(std::move(distributed), keep, ctrl);
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:gather";
+	auto data = gather(
+		std::move(filtered.data()),
+		detail::gather_control<
+			detail::theta_field_distribution_1,
+			mpl::matrix_size<std::size_t, std::size_t>
+		>{{}, series_sz}
+	);
+	BOOST_ASSERT(data.size() == series_sz);
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:to_std_vector";
+	auto latent = hana::to<hana::ext::std::vector_tag>(std::move(filtered.latent()));
+	
+	#if !defined(NDEBUG)
+	{
+		auto latent_sz = (*mpl::size)(latent);
+		auto data_sz = detail::distributed_size(data, detail::theta_field_distribution_1{});
+		std::size_t data_m = (*mpl::m)(data_sz);
+		std::size_t data_n = (*mpl::n)(data_sz);
+		//NOTE: pca was applied to transposed data matrix
+		auto DOF = data_n - (ctrl.center() ? 1 : 0);
 		
-		El::DistMatrixReadProxy<Ring, _Ring_, El::STAR, El::STAR, Wrapping> from_pxy = {from.data()};
-		
-		auto from_local = from_pxy.GetLocked();
-		std::size_t from_sz = boost::numeric_cast<std::size_t>(from_local.Height());
-		BOOST_ASSERT(from_local.Width() == 1);
-		BOOST_ASSERT(from_local.Height() == from.data().Height());
-		
-		std::vector<double> to;
-		to.resize(from_sz);
-		BOOST_ASSERT(to.size() == from_sz);
-		
-		for (std::size_t i = 0; i < from_sz; ++i) {
-			to.at(i) = boost::numeric_cast<double>(from_local.Get(boost::numeric_cast<El::Int>(i), 0));
+		if (DOF < data_m) {
+			if (ctrl.economy()) {
+				BOOST_ASSERT(latent_sz == DOF);
+			} else {
+				BOOST_ASSERT(latent_sz == data_m);
+			}
+		} else {
+			BOOST_ASSERT(latent_sz == std::min(data_m, DOF));
 		}
-		
-		return to;
 	}
-#endif
+	#endif
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:end";
+	return {data, latent};
+}
+#endif //! HBRS_MPL_ENABLE_ELEMENTAL
 
 #if defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL)
-	template<typename From>
-	mpl::pca_filter_result<
-		std::vector<theta_field> /* data */,
-		std::vector<double> /* latent*/
-	>
-	copy(From && from, std::vector<theta_field> & to) {
+template<
+	typename Backend,
+	typename std::enable_if_t<
+		std::is_same_v< Backend, matlab_lapack_backend > ||
+		std::is_same_v< Backend, elemental_openmp_backend >
+	>* = nullptr
+>
+auto
+reduce(
+	theta_field_matrix series,
+	Backend,
+	std::function<bool(std::size_t)> keep,
+	mpl::pca_control<bool,bool,bool> ctrl
+) {
+	BOOST_ASSERT(mpi::comm_size() == 1);
+	
+	auto copy_and_transform =
+		[](auto && from, theta_field_matrix & to) ->
+			mpl::pca_filter_result<
+				theta_field_matrix /* data */,
+				std::vector<double> /* latent*/
+			>
+	{
 		return {
 			detail::copy_matrix(HBRS_MPL_FWD(from).data(), to),
-			to_std_vector(HBRS_MPL_FWD(from).latent())
+			hana::to<hana::ext::std::vector_tag>(HBRS_MPL_FWD(from).latent())
 		};
-	}
+	};
 	
-	template<typename Matrix>
-	decltype(auto)
-	reduce(
-		Matrix && data,
-		std::function<bool(std::size_t)> keep,
-		mpl::pca_control<bool,bool,bool> ctrl
-	) {
-		// NOTE: in our data matrix, rows correspond to variables and columns correspond to observations,
-		//       but in pca it is vice versa.
-		decltype(auto) r = mpl::pca_filter(mpl::transpose(HBRS_MPL_FWD(data)), keep, ctrl);
-		
-		return mpl::make_pca_filter_result(
-			mpl::transpose(HBRS_MPL_FWD(r).data()),
-			HBRS_MPL_FWD(r).latent()
-		);
-	}
-	
-	template<typename Backend>
-	decltype(auto)
-	reduce(
-		std::vector<theta_field> series,
-		Backend backend,
-		std::function<bool(std::size_t)> keep,
-		mpl::pca_control<bool,bool,bool> ctrl
-	) {
-		return copy(
-			reduce(
-				detail::copy_matrix(
-					series,
-					init_matrix(backend, detail::global_size(series))
-				),
-				keep,
-				ctrl
-			),
-			series
-		);
-	}
-#endif
+	return copy_and_transform(
+		transpose_reduce_transpose(
+			hana::to<tag_of_t<Backend>>(series),
+			keep,
+			ctrl
+		),
+		series
+	);
+}
+#endif // !( defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL) )
 
 void
 decompose_with_pca(
@@ -339,7 +361,7 @@ decompose_with_pca(
 	}
 	
 	mpl::pca_filter_result<
-		std::vector<theta_field>,
+		theta_field_matrix,
 		std::vector<double>
 	> reduced;
 	
@@ -356,57 +378,36 @@ decompose_with_pca(
 	switch (backend) {
 		#ifdef HBRS_MPL_ENABLE_MATLAB
 		case pca_backend::matlab_lapack:
-			reduced = reduce(std::move(series), matlab_lapack_backend_c, keep, ctrl);
+			reduced = reduce({std::move(series)}, matlab_lapack_backend_c, keep, ctrl);
 			break;
 		#endif // !HBRS_MPL_ENABLE_MATLAB
 		#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 		case pca_backend::elemental_openmp:
-			reduced = reduce(std::move(series), elemental_openmp_backend_c, keep, ctrl);
+			reduced = reduce({std::move(series)}, elemental_openmp_backend_c, keep, ctrl);
 			break;
 		case pca_backend::elemental_mpi:
-			reduced = reduce(std::move(series), elemental_mpi_backend_c, keep, ctrl);
+			reduced = distributed_reduce({std::move(series)}, elemental_mpi_backend_c, keep, ctrl);
 			break;
 		#endif // !HBRS_MPL_ENABLE_ELEMENTAL
 		default:
 			BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{backend});
 	};
 	
-	#if !defined(NDEBUG)
-	{
-		auto latent_sz = (*mpl::size)(reduced.latent());
-		auto data_sz = detail::global_size(reduced.data());
-		std::size_t data_m = (*mpl::m)(data_sz);
-		std::size_t data_n = (*mpl::n)(data_sz);
-		//NOTE: pca was applied to transposed data matrix
-		auto DOF = data_n - (ctrl.center() ? 1 : 0);
-		
-		if (DOF < data_m) {
-			if (ctrl.economy()) {
-				BOOST_ASSERT(latent_sz == DOF);
-			} else {
-				BOOST_ASSERT(latent_sz == data_m);
-			}
-		} else {
-			BOOST_ASSERT(latent_sz == std::min(data_m, DOF));
-		}
-	}
-	#endif
-	
 	{
 		// we need global_id field if distributed, e.g. for visualization
 		std::vector<theta_field> global_ids = read_theta_fields(paths, {"global_id"});
-		BOOST_ASSERT(reduced.data().size() == global_ids.size());
+		BOOST_ASSERT(reduced.data().size().n() == global_ids.size());
 		BOOST_ASSERT(mpi::comm_size() > 1
 			? global_ids[0].global_id().size() > 0
 			: global_ids[0].global_id().size() == 0
 		);
 		
-		for(std::size_t i = 0; i < reduced.data().size(); ++i) {
+		for(std::size_t i = 0; i < reduced.data().size().n(); ++i) {
 			auto & src = global_ids[i].global_id();
-			auto & tgt = reduced.data()[i].global_id();
+			auto & tgt = reduced.data().data()[i].global_id();
 			
 			BOOST_ASSERT(mpi::comm_size() > 1
-				? src.size() == reduced.data()[i].x_velocity().size() /* distributed */
+				? src.size() == reduced.data().data()[i].x_velocity().size() /* distributed */
 				: src.size() == 0
 			);
 			
@@ -414,7 +415,7 @@ decompose_with_pca(
 		}
 	}
 	write_theta_fields(
-		mpl::detail::zip_impl_std_tuple_vector{}(std::move(reduced.data()), std::move(output_paths)),
+		mpl::detail::zip_impl_std_tuple_vector{}(std::move(reduced.data().data()), std::move(output_paths)),
 		overwrite
 	);
 	write_stats(std::move(reduced.latent()), stats_path);

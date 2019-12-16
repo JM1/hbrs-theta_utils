@@ -14,10 +14,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_HPP
-#define HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_HPP
+#ifndef HBRS_THETA_UTILS_DETAIL_SCATTER_FWD_HPP
+#define HBRS_THETA_UTILS_DETAIL_SCATTER_FWD_HPP
 
-#include "make_theta_fields/fwd.hpp"
-#include "make_theta_fields/impl.hpp"
+//BLANK
 
-#endif // !HBRS_THETA_UTILS_DETAIL_MAKE_THETA_FIELDS_HPP
+#endif // !HBRS_THETA_UTILS_DETAIL_SCATTER_FWD_HPP

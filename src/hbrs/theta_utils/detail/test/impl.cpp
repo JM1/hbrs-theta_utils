@@ -69,7 +69,44 @@ io_fixture::wd() const { return (wd_); }
 
 std::string const&
 io_fixture::prefix() const { return (prefix_); }
+
+std::vector<theta_field_path>
+make_theta_field_paths(
+	fs::path const& dir,
+	std::string const& prefix,
+	theta_field_matrix const& series,
+	enum theta_field_path::naming_scheme scheme
+) {
+	auto sz = series.size();
 	
+	std::vector<theta_field_path> fields;
+	if (sz.m() > 0) {
+		fields.reserve(sz.m());
+		
+		for(std::size_t j = 0; j < sz.n(); ++j) {
+			boost::optional<int> domain_num;
+			if (mpi::comm_size() > 1) {
+				domain_num = mpi::comm_rank();
+			}
+			
+			theta_field_path path{
+				dir,
+				prefix,
+				{
+					{boost::lexical_cast<std::string>(j), "000"} /* significand */,
+					"00" /* exponent */
+				} /* timestamp */,
+				static_cast<int>(j) * 10 /* step */,
+				domain_num,
+				scheme
+			};
+			
+			fields.push_back(path);
+		}
+	}
+	return fields;
+}
+
 
 /* namespace detail */ }
 HBRS_THETA_UTILS_NAMESPACE_END

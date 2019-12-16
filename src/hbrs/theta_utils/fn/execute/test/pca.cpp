@@ -26,10 +26,10 @@
 #include <hbrs/mpl/detail/not_supported.hpp>
 
 #include <hbrs/theta_utils/dt/command.hpp>
+#include <hbrs/theta_utils/dt/theta_field.hpp>
 #include <hbrs/theta_utils/fn/execute.hpp>
 #include <hbrs/theta_utils/detail/test.hpp>
-#include <hbrs/theta_utils/detail/make_theta_fields.hpp>
-#include <hbrs/theta_utils/detail/copy_matrix.hpp>
+#include <hbrs/theta_utils/detail/matrix.hpp>
 #include <hbrs/mpl/fn/zip.hpp>
 #include <hbrs/mpl/fn/equal.hpp>
 
@@ -165,7 +165,13 @@ BOOST_AUTO_TEST_CASE(write_read,
 		auto m_ = (*m)(sz_);
 		auto n_ = (*n)(sz_);
 		
-		BOOST_ASSERT(m_%(3u * boost::numeric_cast<std::size_t>(mpi::comm_size())) == 0u);
+		if (m_%(3u * boost::numeric_cast<std::size_t>(mpi::comm_size())) != 0u) {
+			BOOST_TEST_MESSAGE(
+				"Skipping dataset_nr=" << dataset_nr 
+				<< " because incompatible for executing with " << mpi::comm_size() << " MPI processes"
+			);
+			return;
+		}
 		
 		auto testcases = hana::transform(
 			factories,
@@ -211,10 +217,10 @@ BOOST_AUTO_TEST_CASE(write_read,
 						? boost::optional<int>{mpi::comm_rank()}
 						: boost::optional<int>{boost::none};
 					
-					std::vector<theta_field> local_series = hbrs::theta_utils::detail::make_theta_fields(local_dataset);
-					for(theta_field & field : local_series) {
+					theta_field_matrix local_series = hbrs::theta_utils::make_theta_field_matrix(local_dataset);
+					for(theta_field & field : local_series.data()) {
 						if (mpi::comm_size() > 1) {
-							field.global_id() = std::vector<int>(hbrs::theta_utils::detail::local_size(local_series).m()/3, 0);
+							field.global_id() = std::vector<int>(local_series.size().m()/3, 0);
 						}
 						field.ndomains() = mpi::comm_size();
 					}
@@ -229,7 +235,7 @@ BOOST_AUTO_TEST_CASE(write_read,
 					}
 					
 					write_theta_fields(
-						mpl::detail::zip_impl_std_tuple_vector{}(local_series, pca_input_paths),
+						mpl::detail::zip_impl_std_tuple_vector{}(local_series.data(), pca_input_paths),
 						false
 					);
 					
@@ -258,12 +264,12 @@ BOOST_AUTO_TEST_CASE(write_read,
 				BOOST_TEST((*equal)(all_paths.size(), n_)); // because every MPI process creates its own temporary directory
 				BOOST_TEST((*equal)(paths.size(), n_));
 				
-				std::vector<theta_field> local_series = read_theta_fields(paths);
+				theta_field_matrix local_series = theta_field_matrix{ read_theta_fields(paths) };
 				rtsam<double, storage_order::row_major> local_series_as_matrix =
 					hbrs::theta_utils::detail::copy_matrix(
 						local_series, 
 						rtsam<double, storage_order::row_major>{
-							hbrs::theta_utils::detail::local_size(local_series)
+							local_series.size()
 						}
 					);
 				

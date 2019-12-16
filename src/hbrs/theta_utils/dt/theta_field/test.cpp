@@ -23,7 +23,7 @@
 #include <hbrs/mpl/config.hpp>
 #include <hbrs/mpl/detail/test.hpp>
 #include <hbrs/theta_utils/detail/test.hpp>
-#include <hbrs/theta_utils/detail/make_theta_fields.hpp>
+#include <hbrs/theta_utils/dt/theta_field.hpp>
 
 #include <array>
 
@@ -34,7 +34,7 @@ namespace {
 
 /* test data */
 inline static auto const
-fields0 = hbrs::theta_utils::detail::make_theta_fields(
+fields0 = hbrs::theta_utils::make_theta_field_matrix(
 	mpl::rtsam<double, mpl::storage_order::row_major>{
 		{
 			1,2,3,
@@ -167,13 +167,13 @@ BOOST_AUTO_TEST_CASE(read, * utf::precondition(detail::mpi_world_size_condition{
 		
 		// read test data
 		auto paths = find_theta_fields(fx.wd().path(), fx.prefix());
-		auto got = read_theta_fields(paths);
+		auto got = theta_field_matrix{read_theta_fields(paths)};
 		
 		#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 			//compare to reference data
-			auto ref_sz = detail::local_size(fields0);
+			auto ref_sz = fields0.size();
 			auto ref = detail::copy_matrix(fields0, mpl::el_matrix<double>{(El::Int)ref_sz.m(),(El::Int)ref_sz.n()});
-			auto got_sz = detail::local_size(got);
+			auto got_sz = got.size();
 			auto got_ = detail::copy_matrix(got, mpl::el_matrix<double>{(El::Int)got_sz.m(),(El::Int)got_sz.n()});
 			HBRS_MPL_TEST_MMEQ(ref, got_, false);
 		#else
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(write, * utf::precondition(detail::mpi_world_size_condition
 		fields.reserve(paths.size());
 		
 		for(std::size_t j = 0; j < paths.size(); ++j) {
-			fields.push_back({fields0.at(j), paths.at(j)});
+			fields.push_back({fields0.data().at(j), paths.at(j)});
 		}
 		write_theta_fields(fields, false);
 		

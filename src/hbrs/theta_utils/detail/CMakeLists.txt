@@ -6,8 +6,10 @@
 
 #################### list the subdirectories ####################
 
-add_subdirectory(copy_matrix)
+add_subdirectory(gather)
+add_subdirectory(iff)
 add_subdirectory(int_ranges)
-add_subdirectory(make_theta_fields)
+add_subdirectory(matrix)
+add_subdirectory(scatter)
 add_subdirectory(test)
 add_subdirectory(vtk)

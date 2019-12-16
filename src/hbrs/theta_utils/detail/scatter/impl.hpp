@@ -14,25 +14,46 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_FWD_HPP
-#define HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_FWD_HPP
+#ifndef HBRS_THETA_UTILS_DETAIL_SCATTER_IMPL_HPP
+#define HBRS_THETA_UTILS_DETAIL_SCATTER_IMPL_HPP
+
+#include "fwd.hpp"
 
 #include <hbrs/theta_utils/config.hpp>
-#include <hbrs/theta_utils/dt/theta_field.hpp>
+#include <hbrs/theta_utils/dt/theta_field_matrix.hpp>
+
+#include <hbrs/mpl/config.hpp>
+#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+    #include <hbrs/mpl/dt/el_dist_matrix.hpp>
+#endif // !HBRS_MPL_ENABLE_ELEMENTAL
 #include <hbrs/mpl/dt/matrix_size.hpp>
-#include <vector>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace mpl = hbrs::mpl;
 namespace detail {
 
-mpl::matrix_size<std::size_t, std::size_t>
-local_size(std::vector<theta_field> const& series);
+struct theta_field_distribution_1{};
+
+template<typename Algorithm>
+struct scatter_control{
+	Algorithm algorithm;
+};
 
 mpl::matrix_size<std::size_t, std::size_t>
-global_size(std::vector<theta_field> const& series);
+distributed_size(
+	theta_field_matrix const& series,
+	theta_field_distribution_1
+);
+
+#ifdef HBRS_MPL_ENABLE_ELEMENTAL
+hbrs::mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT>
+scatter(
+	theta_field_matrix const& from,
+	scatter_control<theta_field_distribution_1>
+);
+#endif // !HBRS_MPL_ENABLE_ELEMENTAL
 
 /* namespace detail */ }
 HBRS_THETA_UTILS_NAMESPACE_END
 
-#endif // !HBRS_THETA_UTILS_DETAIL_COPY_MATRIX_FWD_HPP
+#endif // !HBRS_THETA_UTILS_DETAIL_SCATTER_IMPL_HPP

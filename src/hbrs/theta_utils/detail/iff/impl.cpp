@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2019 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,31 +14,22 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HBRS_THETA_UTILS_DETAIL_TEST_FWD_HPP
-#define HBRS_THETA_UTILS_DETAIL_TEST_FWD_HPP
-
-#include <hbrs/theta_utils/config.hpp>
-#include <hbrs/theta_utils/dt/theta_field_matrix.hpp>
-#include <boost/filesystem.hpp>
-#include <string>
-#include <vector>
+#include "impl.hpp"
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
-namespace fs = boost::filesystem;
 namespace detail {
 
-struct mpi_world_size_condition;
-struct temp_test_directory;
-
-std::vector<theta_field_path>
-make_theta_field_paths(
-	fs::path const& dir,
-	std::string const& prefix,
-	theta_field_matrix const& series,
-	enum theta_field_path::naming_scheme scheme
-);
+bool
+iff(bool lhs, bool rhs) {
+	/* p | q | p != q | !(p != q)
+	 * --+---+--------+----------
+	 * F | F |   F    |     T
+	 * T | F |   T    |     F
+	 * F | T |   T    |     F
+	 * T | T |   F    |     T
+	 */
+	return !(lhs != rhs);
+}
 
 /* namespace detail */ }
 HBRS_THETA_UTILS_NAMESPACE_END
-
-#endif // !HBRS_THETA_UTILS_DETAIL_TEST_FWD_HPP
