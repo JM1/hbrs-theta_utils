@@ -76,13 +76,14 @@ install(TARGETS hbrs_theta_utils hbrs_theta_utils_cli
     EXPORT hbrs-theta_utils-targets
     ${HBRS_THETA_UTILS_INSTALL_TARGETS_DEFAULT_DESTINATIONS})
 
+file(RELATIVE_PATH hbrs_theta_utils_includedir "${PROJECT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}")
 install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/export.hpp"
     "${CMAKE_CURRENT_BINARY_DIR}/config.hpp"
-    DESTINATION ${HBRS_THETA_UTILS_INSTALL_INCLUDEDIR}
+    DESTINATION "${HBRS_THETA_UTILS_INSTALL_INCLUDEDIR}/${hbrs_theta_utils_includedir}"
     COMPONENT development)
 
 install(DIRECTORY ./
-    DESTINATION "${HBRS_THETA_UTILS_INSTALL_INCLUDEDIR}"
+    DESTINATION "${HBRS_THETA_UTILS_INSTALL_INCLUDEDIR}/${hbrs_theta_utils_includedir}"
     COMPONENT development
     FILES_MATCHING PATTERN "*.hpp")

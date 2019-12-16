@@ -131,7 +131,7 @@ include(GNUInstallDirs)
 # Offer a choice of overriding the installation directories
 set(HBRS_THETA_UTILS_INSTALL_BINDIR      ${CMAKE_INSTALL_BINDIR}                               CACHE PATH "install dir for executables")
 set(HBRS_THETA_UTILS_INSTALL_LIBDIR      ${CMAKE_INSTALL_LIBDIR}                               CACHE PATH "install dir for libraries")
-set(HBRS_THETA_UTILS_INSTALL_INCLUDEDIR  ${CMAKE_INSTALL_INCLUDEDIR}/hbrs/theta_utils          CACHE PATH "install dir for headers")
+set(HBRS_THETA_UTILS_INSTALL_INCLUDEDIR  ${CMAKE_INSTALL_INCLUDEDIR}                           CACHE PATH "install dir for headers")
 set(HBRS_THETA_UTILS_INSTALL_CMAKEDIR    ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}   CACHE PATH "install dir for CMake files")
 
 set(HBRS_THETA_UTILS_INSTALL_TARGETS_DEFAULT_DESTINATIONS
