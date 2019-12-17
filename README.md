@@ -74,27 +74,32 @@ docker run -ti jm1337/debian-dev-hbrs:buster
 git clone --depth 1 https://github.com/JM1/hbrs-cmake.git
 cd hbrs-cmake
 mkdir build && cd build/
-cmake ..
+# install to non-system directory because sudo is not allowed in this docker container
+cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local ..
 make -j$(nproc)
-sudo make install
+make install
 cd ../../
 
 git clone --depth 1 https://github.com/JM1/hbrs-mpl.git
 cd hbrs-mpl
 mkdir build && cd build/
-cmake -DHBRS_MPL_ENABLE_TESTS=OFF -DHBRS_MPL_ENABLE_BENCHMARKS=OFF -DHBRS_MPL_ENABLE_ADDON_ELEMENTAL=ON -DHBRS_MPL_ENABLE_ADDON_MATLAB=OFF ..
+cmake \
+ -DCMAKE_INSTALL_PREFIX=$HOME/.local                                     \
+ -DHBRS_MPL_ENABLE_TESTS=OFF          -DHBRS_MPL_ENABLE_BENCHMARKS=OFF   \
+ -DHBRS_MPL_ENABLE_ADDON_ELEMENTAL=ON -DHBRS_MPL_ENABLE_ADDON_MATLAB=OFF \
+ ..
 make -j$(nproc)
-sudo make install
+make install
 cd ../../
 
 # fetch, compile and install hbrs-theta_utils
 git clone --depth 1 https://github.com/JM1/hbrs-theta_utils.git
 cd hbrs-theta_utils
 mkdir build && cd build/
-cmake -DHBRS_THETA_UTILS_ENABLE_TESTS=ON ..
+cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local -DHBRS_THETA_UTILS_ENABLE_TESTS=ON ..
 make -j$(nproc)
 ctest --output-on-failure
-sudo make install
+make install
 ```
 
 For more examples how to build and test code see [`.travis.yml`](https://github.com/JM1/hbrs-theta_utils/blob/master/.travis.yml).
