@@ -86,6 +86,7 @@ BOOST_AUTO_TEST_CASE(write_read,
 	using namespace hbrs::mpl;
 	namespace detail = hbrs::mpl::detail;
 	namespace mpi = hbrs::mpl::detail::mpi;
+	namespace hana = boost::hana;
 	using namespace hbrs::theta_utils;
 	
 	static constexpr auto datasets = hana::make_tuple(
