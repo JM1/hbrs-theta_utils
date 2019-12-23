@@ -211,7 +211,38 @@ gather(
 	HBRS_MPL_LOG_TRIVIAL(trace) << "DONE@mpi_rank:" << mpi_rank;
 	return to;
 }
-#endif
+
+theta_field_matrix
+gather(
+	mpl::el_dist_matrix<
+		double, El::VC, El::STAR, El::ELEMENT
+	> const& from,
+	gather_control<
+		theta_field_distribution_2,
+		mpl::matrix_size<std::size_t, std::size_t>
+	> const& ctrl
+) {
+	using hbrs::mpl::detail::loggable;
+	
+	theta_field_matrix to{ctrl.local_size};
+	mpl::matrix_size<size_t, size_t> lcl_sz = to.size();
+	
+	#if !defined(NDEBUG)
+	{
+		mpl::matrix_size<std::size_t, std::size_t> to_gbl_sz   = distributed_size(to, theta_field_distribution_2{});
+		BOOST_ASSERT(from.size().n() == lcl_sz.n());
+		BOOST_ASSERT(from.data().Height() == to_gbl_sz.m());
+		BOOST_ASSERT(from.data().LockedMatrix().Width() == to_gbl_sz.n());
+	}
+	#endif
+	
+	decltype(auto) from_lcl_used = from.data().LockedMatrix()(El::IR(0, lcl_sz.m()), El::ALL);
+	
+	copy_matrix(hbrs::mpl::el_matrix<double>(from_lcl_used), to);
+	
+	return to;
+}
+#endif // !HBRS_MPL_ENABLE_ELEMENTAL
 
 /* namespace detail */ }
 HBRS_THETA_UTILS_NAMESPACE_END

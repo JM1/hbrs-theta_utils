@@ -225,7 +225,7 @@ distributed_reduce(
 	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:scatter";
 	auto distributed = scatter(
 		std::move(series),
-		detail::scatter_control<detail::theta_field_distribution_1>{{}}
+		detail::scatter_control<detail::theta_field_distribution_2>{{}}
 	);
 	
 	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:transpose_reduce_transpose";
@@ -235,7 +235,7 @@ distributed_reduce(
 	auto data = gather(
 		std::move(filtered.data()),
 		detail::gather_control<
-			detail::theta_field_distribution_1,
+			detail::theta_field_distribution_2,
 			mpl::matrix_size<std::size_t, std::size_t>
 		>{{}, series_sz}
 	);
@@ -247,7 +247,7 @@ distributed_reduce(
 	#if !defined(NDEBUG)
 	{
 		auto latent_sz = (*mpl::size)(latent);
-		auto data_sz = detail::distributed_size(data, detail::theta_field_distribution_1{});
+		auto data_sz = detail::distributed_size(data, detail::theta_field_distribution_2{});
 		std::size_t data_m = (*mpl::m)(data_sz);
 		std::size_t data_n = (*mpl::n)(data_sz);
 		//NOTE: pca was applied to transposed data matrix

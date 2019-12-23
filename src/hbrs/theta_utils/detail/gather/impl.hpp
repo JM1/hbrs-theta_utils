@@ -51,6 +51,17 @@ gather(
 		mpl::matrix_size<std::size_t, std::size_t>
 	> const& ctrl
 );
+
+theta_field_matrix
+gather(
+	mpl::el_dist_matrix<
+		double, El::VC, El::STAR, El::ELEMENT
+	> const& from,
+	gather_control<
+		theta_field_distribution_2,
+		mpl::matrix_size<std::size_t, std::size_t>
+	> const& ctrl
+);
 #endif // !HBRS_MPL_ENABLE_ELEMENTAL
 
 /* namespace detail */ }

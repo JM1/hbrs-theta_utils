@@ -66,6 +66,34 @@ distributed_size(
 	return { gbl_m, gbl_min_n };
 }
 
+mpl::matrix_size<std::size_t, std::size_t>
+distributed_size(
+	theta_field_matrix const& series,
+	theta_field_distribution_2
+) {
+	auto lcl_sz = series.size();
+	
+	if (mpi::comm_size() == 1) {
+		return lcl_sz;
+	}
+	
+	std::size_t lcl_m = lcl_sz.m();
+	std::size_t gbl_min_m, gbl_max_m;
+	mpi::allreduce(&lcl_m, &gbl_min_m, 1, MPI_MIN, MPI_COMM_WORLD);
+	mpi::allreduce(&lcl_m, &gbl_max_m, 1, MPI_MAX, MPI_COMM_WORLD);
+	
+	std::size_t lcl_n = lcl_sz.n();
+	std::size_t gbl_min_n, gbl_max_n;
+	mpi::allreduce(&lcl_n, &gbl_min_n, 1, MPI_MIN, MPI_COMM_WORLD);
+	mpi::allreduce(&lcl_n, &gbl_max_n, 1, MPI_MAX, MPI_COMM_WORLD);
+	
+	if(gbl_min_n != gbl_max_n) {
+		BOOST_THROW_EXCEPTION((mpl::incompatible_matrix_exception{} << mpl::errinfo_matrix_size{lcl_sz}));
+	}
+	
+	return { gbl_max_m * mpi::comm_size(), gbl_max_n };
+}
+
 #ifdef HBRS_MPL_ENABLE_ELEMENTAL
 
 mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT>
@@ -79,7 +107,7 @@ scatter(
 	mpl::matrix_size<size_t, size_t> lcl_sz = from.size();
 	mpl::matrix_size<size_t, size_t> gbl_sz = distributed_size(from, theta_field_distribution_1{});
 	
-	static El::Grid const grid{El::mpi::COMM_WORLD};
+	static El::Grid const grid{};
 	mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT> to{
 		grid,
 		boost::numeric_cast<El::Int>(gbl_sz.m()),
@@ -302,7 +330,92 @@ scatter(
 	}
 	
 	HBRS_MPL_LOG_TRIVIAL(trace) << "DONE@mpi_rank:" << mpi_rank;
-	return HBRS_MPL_FWD(to);
+	return to;
+}
+
+mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT>
+scatter(
+	theta_field_matrix const& from,
+	scatter_control<theta_field_distribution_2>
+) {
+	/* Example for 3 processes:
+	 * 
+	 * mpi_sz = 3
+	 * 
+	 * from@proc0 = [  1  2  3
+	 *                 4  5  6
+	 *                 7  8  9
+	 *                10 11 12 ]
+	 * from@proc1 = [ 13 14 15 ]
+	 * from@proc2 = [ 16 17 18
+	 *                19 20 21 ]
+	 * 
+	 * from.m@proc0 = 4
+	 * from.m@proc1 = 1
+	 * from.m@proc2 = 2
+	 *
+	 * from.n@proc0 = 3
+	 * from.n@proc1 = 3
+	 * from.n@proc2 = 3
+	 * 
+	 * to_gbl.m = 12
+	 * 
+	 * to_lcl@proc0 = [ 1  2  3
+	 *                  4  5  6
+	 *                  7  8  9
+	 *                  10 11 12 ]
+	 * to_lcl@proc1 = [ 13 14 15
+	 *                  0  0  0
+	 *                  0  0  0
+	 *                  0  0  0 ]
+	 * to_lcl@proc2 = [ 16 17 18
+	 *                  19 20 21
+	 *                  0  0  0
+	 *                  0  0  0 ]
+	 * 
+	 * to_gbl       = [ 1  2  3
+	 *                  13 14 15
+	 *                  16 17 18
+	 *                  4  5  6
+	 *                  0  0  0
+	 *                  19 20 21
+	 *                  7  8  9
+	 *                  0  0  0
+	 *                  0  0  0
+	 *                  10 11 12
+	 *                  0  0  0
+	 *                  0  0  0 ]
+	 */
+	
+	using std::size_t;
+	using hbrs::mpl::detail::loggable;
+	
+	mpl::matrix_size<size_t, size_t> lcl_sz = from.size();
+	mpl::matrix_size<size_t, size_t> gbl_sz = distributed_size(from, theta_field_distribution_2{});
+	
+	static El::Grid const grid{};
+	mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT> to{
+		grid,
+		boost::numeric_cast<El::Int>(gbl_sz.m()),
+		boost::numeric_cast<El::Int>(gbl_sz.n())
+	};
+	
+	BOOST_ASSERT(lcl_sz.n() == to.size().n());
+	BOOST_ASSERT(lcl_sz.m() <= to.data().Matrix().Height());
+	BOOST_ASSERT(gbl_sz.n() == to.data().Matrix().Width());
+	BOOST_ASSERT(gbl_sz.m() == to.size().m());
+	
+	// if to-matrix is larger than from-field then unused rows will just be zero.
+	if (lcl_sz.m() < to.data().Matrix().Height()) {
+		decltype(auto) to_lcl_unused = to.data().Matrix()(El::IR(lcl_sz.m(), El::END), El::ALL);
+		El::Zero(to_lcl_unused);
+	}
+	
+	decltype(auto) to_lcl_used = to.data().Matrix()(El::IR(0, lcl_sz.m()), El::ALL);
+	
+	to_lcl_used = copy_matrix(from, hbrs::mpl::el_matrix<double>(to_lcl_used)).data();
+	
+	return to;
 }
 #endif // !HBRS_MPL_ENABLE_ELEMENTAL
 /* namespace detail */ }

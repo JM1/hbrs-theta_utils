@@ -33,6 +33,7 @@ namespace mpl = hbrs::mpl;
 namespace detail {
 
 struct theta_field_distribution_1{};
+struct theta_field_distribution_2{};
 
 template<typename Algorithm>
 struct scatter_control{
@@ -45,11 +46,23 @@ distributed_size(
 	theta_field_distribution_1
 );
 
+mpl::matrix_size<std::size_t, std::size_t>
+distributed_size(
+	theta_field_matrix const& series,
+	theta_field_distribution_2
+);
+
 #ifdef HBRS_MPL_ENABLE_ELEMENTAL
 hbrs::mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT>
 scatter(
 	theta_field_matrix const& from,
 	scatter_control<theta_field_distribution_1>
+);
+
+hbrs::mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT>
+scatter(
+	theta_field_matrix const& from,
+	scatter_control<theta_field_distribution_2>
 );
 #endif // !HBRS_MPL_ENABLE_ELEMENTAL
 
