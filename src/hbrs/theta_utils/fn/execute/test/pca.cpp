@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(write_read,
 				typedef decltype(dataset.at(matrix_index<std::size_t, std::size_t>{0u,0u})) Ring;
 				typedef std::decay_t<Ring> _Ring_;
 				
-				static El::Grid grid {El::mpi::COMM_WORLD}; // grid is static because reference to grid is required by El::DistMatrix<...>
+				static El::Grid grid {}; // grid is static because reference to grid is required by El::DistMatrix<...>
 				
 				el_dist_matrix<_Ring_, El::STAR, El::STAR> dist_star_star = make_el_dist_matrix(grid, make_el_matrix(dataset));
 				el_dist_matrix<_Ring_, El::VC,   El::STAR> dist_vc_star   = {dist_star_star.data()};
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(write_read,
 				typedef decltype(dataset.at(matrix_index<std::size_t, std::size_t>{0u,0u})) Ring;
 				typedef std::decay_t<Ring> _Ring_;
 				
-				static El::Grid grid {El::mpi::COMM_WORLD}; // grid is static because reference to grid is required by El::DistMatrix<...>
+				static El::Grid grid {}; // grid is static because reference to grid is required by El::DistMatrix<...>
 				
 				El::DistMatrix<_Ring_, El::VC, El::STAR> dist_vc_star{
 					boost::numeric_cast<El::Int>(dist_size.m().value),
