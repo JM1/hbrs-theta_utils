@@ -285,6 +285,7 @@ reduce(
 	std::function<bool(std::size_t)> keep,
 	mpl::pca_control<bool,bool,bool> ctrl
 ) {
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:reduce:begin";
 	BOOST_ASSERT(mpi::comm_size() == 1);
 	
 	auto copy_and_transform =
@@ -300,7 +301,7 @@ reduce(
 		};
 	};
 	
-	return copy_and_transform(
+	decltype(auto) reduced = copy_and_transform(
 		transpose_reduce_transpose(
 			hana::to<tag_of_t<Backend>>(series),
 			keep,
@@ -308,6 +309,9 @@ reduce(
 		),
 		series
 	);
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:reduce:end";
+	return HBRS_MPL_FWD(reduced);
 }
 #endif // !( defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL) )
 
@@ -323,14 +327,17 @@ decompose_with_pca(
 	std::string const& output_tag,
 	bool const& overwrite
 ) {
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:begin";
 	BOOST_ASSERT(paths.size() > 0);
 	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:read_theta_fields:*_velocity";
 	std::vector<theta_field> series = read_theta_fields(paths, {".*_velocity"});
 	
 	boost::optional<int> domain_num = paths[0].domain_num();
 	BOOST_ASSERT(series.at(0).ndomains() == mpi::comm_size()); //TODO: Turn assertion into exception?
 	// TODO: Warn user that his theta_field was computed with n domains but his current number of mpi processes is different!
 	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:output_paths";
 	// test for existing files before starting decomposition
 	std::vector<theta_field_path> output_paths = paths;
 	for(auto & path : output_paths) {
@@ -359,6 +366,8 @@ decompose_with_pca(
 			}
 		));
 	}
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:reduce";
 	
 	mpl::pca_filter_result<
 		theta_field_matrix,
@@ -393,6 +402,7 @@ decompose_with_pca(
 			BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{backend});
 	};
 	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:read_theta_fields:global_id";
 	{
 		// we need global_id field if distributed, e.g. for visualization
 		std::vector<theta_field> global_ids = read_theta_fields(paths, {"global_id"});
@@ -414,11 +424,17 @@ decompose_with_pca(
 			tgt = std::move(src);
 		}
 	}
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:write_theta_fields";
 	write_theta_fields(
 		mpl::detail::zip_impl_std_tuple_vector{}(std::move(reduced.data().data()), std::move(output_paths)),
 		overwrite
 	);
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:write_stats";
 	write_stats(std::move(reduced.latent()), stats_path);
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:end";
 }
 
 /* unnamed namespace */ }
