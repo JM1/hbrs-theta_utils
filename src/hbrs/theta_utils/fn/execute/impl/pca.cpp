@@ -411,21 +411,7 @@ execute(pca_cmd cmd) {
 	auto tags = cmd.pca_opts.pc_nr_seqs.empty() == false ? cmd.pca_opts.pc_nr_seqs : std::vector<std::string>{"all"};
 	BOOST_ASSERT(includes_seqs.size() == tags.size());
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):read_theta_fields:*_velocity";
-	std::vector<theta_field> const series = read_theta_fields(paths, {".*_velocity"});
-	
-	boost::optional<int> domain_num = paths[0].domain_num();
-	BOOST_ASSERT(series.at(0).ndomains() == mpi::comm_size()); //TODO: Turn assertion into exception?
-	// TODO: Warn user that his theta_field was computed with n domains but his current number of mpi processes is different!
-	
-	// we need global_id field if distributed, e.g. for visualization
-	std::vector<theta_field> const global_ids = read_theta_fields(paths, {"global_id"});
-	BOOST_ASSERT(mpi::comm_size() > 1
-		? global_ids[0].global_id().size() > 0
-		: global_ids[0].global_id().size() == 0
-	);
-	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):output_folder_contents";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):list_output_folder";
 	// Listing folders might be slow for remote storage, e.g. NFS shares.
 	// This applies to e.g. exist(), operator==(path,path) and equivalent() in namespace boost::filesystem.
 	// Thus we list the output folder just once and then just check for existing filenames by string comparison later.
@@ -434,15 +420,20 @@ execute(pca_cmd cmd) {
 		output_folder_contents.push_back(x.path().filename().string());
 	}
 	
-	for(auto && [ includes, tag ] :
-		mpl::detail::zip_impl_std_tuple_vector{}(std::move(includes_seqs), std::move(tags))
-	) {
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):generate_output_paths";
+	// Generate output paths and test for existance before calling read_theta_fields which is slow
+	struct pca_paths {
+		std::vector<theta_field_path> series;
+		fs::path stats;
+	};
+	
+	std::vector<pca_paths> output_paths_set;
+	for(auto && tag : tags) {
 		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):output_paths";
 		// test for existing files before starting decomposition
 		std::vector<theta_field_path> output_paths = paths;
-		
 		for(auto & path : output_paths) {
-			BOOST_ASSERT(path.domain_num() == domain_num);
+			BOOST_ASSERT(path.domain_num() == paths[0].domain_num());
 			
 			// transform input paths to output paths
 			path.folder() = { cmd.o_opts.path };
@@ -460,7 +451,7 @@ execute(pca_cmd cmd) {
 			}
 		}
 		
-		auto stats_path = make_stats_output_path({ cmd.o_opts.path }, cmd.o_opts.prefix, tag, domain_num);
+		auto stats_path = make_stats_output_path({ cmd.o_opts.path }, cmd.o_opts.prefix, tag, paths[0].domain_num());
 		if (mpl::contains(output_folder_contents, stats_path.filename().string()) && !cmd.o_opts.overwrite) {
 			BOOST_THROW_EXCEPTION((
 				fs::filesystem_error{
@@ -472,6 +463,30 @@ execute(pca_cmd cmd) {
 			));
 		}
 		
+		output_paths_set.push_back({output_paths, stats_path});
+		
+		// update our output folder listing
+		for(theta_field_path & output_path : output_paths) {
+			output_folder_contents.push_back(output_path.full_path().filename().string());
+		}
+		output_folder_contents.push_back(stats_path.filename().string());
+	}
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):read_theta_fields:*_velocity";
+	std::vector<theta_field> const series = read_theta_fields(paths, {".*_velocity"});
+	BOOST_ASSERT(series.at(0).ndomains() == mpi::comm_size()); //TODO: Turn assertion into exception?
+	// TODO: Warn user that his theta_field was computed with n domains but his current number of mpi processes is different!
+	
+	// we need global_id field if distributed, e.g. for visualization
+	std::vector<theta_field> const global_ids = read_theta_fields(paths, {"global_id"});
+	BOOST_ASSERT(mpi::comm_size() > 1
+		? global_ids[0].global_id().size() > 0
+		: global_ids[0].global_id().size() == 0
+	);
+	
+	for(auto && [ includes, output_paths ] :
+		mpl::detail::zip_impl_std_tuple_vector{}(std::move(includes_seqs), std::move(output_paths_set))
+	) {
 		mpl::pca_filter_result<
 			theta_field_matrix,
 			std::vector<double>
@@ -502,19 +517,12 @@ execute(pca_cmd cmd) {
 		
 		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):write_theta_fields";
 		write_theta_fields(
-			mpl::detail::zip_impl_std_tuple_vector{}(std::move(reduced.data().data()), std::move(output_paths)),
+			mpl::detail::zip_impl_std_tuple_vector{}(std::move(reduced.data().data()), std::move(output_paths.series)),
 			cmd.o_opts.overwrite
 		);
 		
 		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):write_stats";
-		write_stats(std::move(reduced.latent()), stats_path);
-		
-		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):update_output_folder_contents";
-		// update our output folder listing
-		for(theta_field_path & output_path : output_paths) {
-			output_folder_contents.push_back(output_path.full_path().filename().string());
-		}
-		output_folder_contents.push_back(stats_path.filename().string());
+		write_stats(std::move(reduced.latent()), output_paths.stats);
 	}
 	
 	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):end";
