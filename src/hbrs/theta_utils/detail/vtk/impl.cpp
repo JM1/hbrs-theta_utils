@@ -983,6 +983,7 @@ HBRS_THETA_UTILS_DEFINE_ATTR(format, vtk_file_format, vtk_path)
 HBRS_THETA_UTILS_NAMESPACE_END
 
 #include <hbrs/mpl/detail/mpi.hpp>
+#include <hbrs/mpl/detail/log.hpp>
 #include <hbrs/mpl/fn/transform.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
@@ -1016,9 +1017,12 @@ convert_to_vtk(
 	vtk_file_format format,
 	bool overwrite
 ) {
+	HBRS_MPL_LOG_TRIVIAL(debug) << "convert_to_vtk:begin";
 	bool distributed = mpi::comm_size() > 1;
+	HBRS_MPL_LOG_TRIVIAL(debug) << "convert_to_vtk:read_theta_grid";
 	theta_grid const grid = read_theta_grid(grid_path);
-
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "convert_to_vtk:vtk_paths";
 	// create vtk filenames
 	std::vector<vtk_path> vtk_paths;
 	vtk_paths.reserve(field_paths.size());
@@ -1037,10 +1041,12 @@ convert_to_vtk(
 		vtk_paths.emplace_back(folder, basename, distributed, format);
 	};
 	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "convert_to_vtk:vtk_paths:safe_write";
 	for(auto vtk_path : vtk_paths) {
 		safe_write(vtk_path.full_path(), overwrite);
 	}
 	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "convert_to_vtk:pvd_path";
 	// create pvd filename
 	fs::path pvd_path_ = pvd_path{folder, prefix}.full_path();
 	safe_write(pvd_path_, overwrite);
@@ -1049,6 +1055,7 @@ convert_to_vtk(
 	for(std::size_t i = 0; i < field_paths.size(); ++i) {
 		theta_field_path field_path = field_paths[i];
 		
+		HBRS_MPL_LOG_TRIVIAL(debug) << "convert_to_vtk:read_theta_field:i=" << i;
 		theta_field field = read_theta_field(
 			field_path.full_path().string(),
 			includes /* TODO: Or hardcode includes? {".*_velocity", "global_id"} */,
@@ -1057,9 +1064,11 @@ convert_to_vtk(
 		
 		BOOST_ASSERT(*field.ndomains() == mpi::comm_size());
 		
+		HBRS_MPL_LOG_TRIVIAL(debug) << "convert_to_vtk:make_vtk_unstructured_grid:i=" << i;
 		vtk_path vtk_path = vtk_paths[i];
 		auto vtk_grid = make_vtk_unstructured_grid(grid, field);
 		
+		HBRS_MPL_LOG_TRIVIAL(debug) << "convert_to_vtk:write_vtk_*:i=" << i;
 		if (format == vtk_file_format::legacy_ascii && !distributed) {
 			write_vtk_legacy_ascii(vtk_grid, vtk_path.full_path().string().data());
 		} else if (format == vtk_file_format::xml_binary) {
@@ -1076,11 +1085,14 @@ convert_to_vtk(
 	// let one process write a pvd file for easier ParaView usage
 	// NOTE: A pvd file only works for xml output files
 	if (format == vtk_file_format::xml_binary && (mpi::comm_rank() == 0)) {
+		HBRS_MPL_LOG_TRIVIAL(debug) << "convert_to_vtk:write_pvd";
 		std::vector<fs::path> vtk_plain_paths = (*mpl::transform)(
 			vtk_paths,
 			[](vtk_path path) { return path.full_path(); }
 		);
 		write_pvd(vtk_plain_paths, pvd_path_.string());
 	}
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "convert_to_vtk:end";
 }
 HBRS_THETA_UTILS_NAMESPACE_END
