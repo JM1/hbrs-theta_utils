@@ -54,6 +54,13 @@ gather(
 	using hbrs::mpl::detail::loggable;
 	
 	theta_field_matrix to{ctrl.local_size};
+	{
+		auto mpi_sz = mpi::comm_size();
+		for(theta_field & field : to.data()) {
+			field.ndomains() = mpi_sz;
+		}
+	}
+	
 	mpl::matrix_size<size_t, size_t> lcl_sz = to.size();
 	
 	#if !defined(NDEBUG)
@@ -67,7 +74,6 @@ gather(
 	
 	size_t mpi_sz = boost::numeric_cast<size_t>(mpi::comm_size());
 	size_t mpi_rank = boost::numeric_cast<size_t>(mpi::comm_rank());
-	
 	
 	size_t lcl_m = lcl_sz.m();
 	size_t lcl_n = lcl_sz.n();
@@ -225,6 +231,13 @@ gather(
 	using hbrs::mpl::detail::loggable;
 	
 	theta_field_matrix to{ctrl.local_size};
+	{
+		auto mpi_sz = mpi::comm_size();
+		for(theta_field & field : to.data()) {
+			field.ndomains() = mpi_sz;
+		}
+	}
+	
 	mpl::matrix_size<size_t, size_t> lcl_sz = to.size();
 	
 	#if !defined(NDEBUG)
