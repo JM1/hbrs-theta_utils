@@ -33,6 +33,7 @@
 #include <hbrs/mpl/fn/equal.hpp>
 #include <hbrs/mpl/fn/m.hpp>
 #include <hbrs/mpl/fn/n.hpp>
+#include <hbrs/mpl/fn/contains.hpp>
 
 #include <hbrs/mpl/detail/mpi.hpp>
 #include <hbrs/mpl/detail/log.hpp>
@@ -52,6 +53,7 @@
 
 #include <sstream>
 #include <limits>
+#include <algorithm>
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace mpl = hbrs::mpl;
@@ -315,64 +317,15 @@ reduce(
 }
 #endif // !( defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL) )
 
-void
+auto
 decompose_with_pca(
-	std::vector<theta_field_path> paths,
+	std::vector<theta_field> const& series,
 	detail::int_ranges<std::size_t> const& includes,
 	pca_backend const& backend,
 	bool center,
-	bool normalize,
-	fs::path const& output_folder,
-	std::string const& output_prefix,
-	std::string const& output_tag,
-	bool const& overwrite
+	bool normalize
 ) {
 	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:begin";
-	BOOST_ASSERT(paths.size() > 0);
-	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:read_theta_fields:*_velocity";
-	std::vector<theta_field> series = read_theta_fields(paths, {".*_velocity"});
-	
-	boost::optional<int> domain_num = paths[0].domain_num();
-	BOOST_ASSERT(series.at(0).ndomains() == mpi::comm_size()); //TODO: Turn assertion into exception?
-	// TODO: Warn user that his theta_field was computed with n domains but his current number of mpi processes is different!
-	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:output_paths";
-	// test for existing files before starting decomposition
-	std::vector<theta_field_path> output_paths = paths;
-	for(auto & path : output_paths) {
-		BOOST_ASSERT(path.domain_num() == domain_num);
-		
-		// transform input paths to output paths
-		path.folder() = output_folder;
-		path.prefix() = output_prefix + '_' + output_tag;
-		
-		if (fs::exists(path.full_path()) && !overwrite) {
-			BOOST_THROW_EXCEPTION((
-				fs::filesystem_error{
-					(boost::format("output file %s already exists in folder %s") % path.filename().string() % path.full_path().parent_path().string()).str(),
-					make_error_code(boost::system::errc::file_exists)
-				}
-			));
-		}
-	}
-	
-	auto stats_path = make_stats_output_path(output_folder, output_prefix, output_tag, domain_num);
-	if (fs::exists(stats_path) && !overwrite) {
-		BOOST_THROW_EXCEPTION((
-			fs::filesystem_error{
-				(boost::format("stats file %s already exists in folder %s") % stats_path.string() % stats_path.parent_path().string()).str(),
-				make_error_code(boost::system::errc::file_exists)
-			}
-		));
-	}
-	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:reduce";
-	
-	mpl::pca_filter_result<
-		theta_field_matrix,
-		std::vector<double>
-	> reduced;
 	
 	if ((mpi::comm_size() > 1) && (backend != pca_backend::elemental_mpi)) {
 		BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{backend});
@@ -382,65 +335,48 @@ decompose_with_pca(
 		return detail::in_int_ranges(includes, i); 
 	};
 	
-	mpl::pca_control<bool,bool,bool> ctrl {true /* economy */, center, normalize};
+	mpl::pca_control<
+		bool,
+		bool,
+		bool
+	> ctrl {
+		true /* economy */,
+		center,
+		normalize
+	};
+	
+	mpl::pca_filter_result<
+		theta_field_matrix,
+		std::vector<double>
+	> reduced;
 	
 	switch (backend) {
 		#ifdef HBRS_MPL_ENABLE_MATLAB
 		case pca_backend::matlab_lapack:
-			reduced = reduce({std::move(series)}, matlab_lapack_backend_c, keep, ctrl);
+			reduced = reduce({series}, matlab_lapack_backend_c, keep, ctrl);
 			break;
 		#endif // !HBRS_MPL_ENABLE_MATLAB
 		#ifdef HBRS_MPL_ENABLE_ELEMENTAL
 		case pca_backend::elemental_openmp:
-			reduced = reduce({std::move(series)}, elemental_openmp_backend_c, keep, ctrl);
+			reduced = reduce({series}, elemental_openmp_backend_c, keep, ctrl);
 			break;
 		case pca_backend::elemental_mpi:
-			reduced = distributed_reduce({std::move(series)}, elemental_mpi_backend_c, keep, ctrl);
+			reduced = distributed_reduce({series}, elemental_mpi_backend_c, keep, ctrl);
 			break;
 		#endif // !HBRS_MPL_ENABLE_ELEMENTAL
 		default:
 			BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{backend});
 	};
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:read_theta_fields:global_id";
-	{
-		// we need global_id field if distributed, e.g. for visualization
-		std::vector<theta_field> global_ids = read_theta_fields(paths, {"global_id"});
-		BOOST_ASSERT(reduced.data().size().n() == global_ids.size());
-		BOOST_ASSERT(mpi::comm_size() > 1
-			? global_ids[0].global_id().size() > 0
-			: global_ids[0].global_id().size() == 0
-		);
-		
-		for(std::size_t i = 0; i < reduced.data().size().n(); ++i) {
-			auto & src = global_ids[i].global_id();
-			auto & tgt = reduced.data().data()[i].global_id();
-			
-			BOOST_ASSERT(mpi::comm_size() > 1
-				? src.size() == reduced.data().data()[i].x_velocity().size() /* distributed */
-				: src.size() == 0
-			);
-			
-			tgt = std::move(src);
-		}
-	}
-	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:write_theta_fields";
-	write_theta_fields(
-		mpl::detail::zip_impl_std_tuple_vector{}(std::move(reduced.data().data()), std::move(output_paths)),
-		overwrite
-	);
-	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:write_stats";
-	write_stats(std::move(reduced.latent()), stats_path);
-	
 	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:end";
+	return reduced;
 }
 
 /* unnamed namespace */ }
 
 void
 execute(pca_cmd cmd) {
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):begin";
 	BOOST_ASSERT(mpi::initialized());
 	
 	auto paths = filter_theta_fields_by_domain_num(
@@ -475,19 +411,113 @@ execute(pca_cmd cmd) {
 	auto tags = cmd.pca_opts.pc_nr_seqs.empty() == false ? cmd.pca_opts.pc_nr_seqs : std::vector<std::string>{"all"};
 	BOOST_ASSERT(includes_seqs.size() == tags.size());
 	
-	for(auto && [ includes, tag ] : mpl::detail::zip_impl_std_tuple_vector{}(std::move(includes_seqs), std::move(tags))) {
-		decompose_with_pca(
-			paths,
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):read_theta_fields:*_velocity";
+	std::vector<theta_field> const series = read_theta_fields(paths, {".*_velocity"});
+	
+	boost::optional<int> domain_num = paths[0].domain_num();
+	BOOST_ASSERT(series.at(0).ndomains() == mpi::comm_size()); //TODO: Turn assertion into exception?
+	// TODO: Warn user that his theta_field was computed with n domains but his current number of mpi processes is different!
+	
+	// we need global_id field if distributed, e.g. for visualization
+	std::vector<theta_field> const global_ids = read_theta_fields(paths, {"global_id"});
+	BOOST_ASSERT(mpi::comm_size() > 1
+		? global_ids[0].global_id().size() > 0
+		: global_ids[0].global_id().size() == 0
+	);
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):output_folder_contents";
+	// Listing folders might be slow for remote storage, e.g. NFS shares.
+	// This applies to e.g. exist(), operator==(path,path) and equivalent() in namespace boost::filesystem.
+	// Thus we list the output folder just once and then just check for existing filenames by string comparison later.
+	std::vector<std::string> output_folder_contents;
+	for (auto && x : fs::directory_iterator{{ cmd.o_opts.path }}){
+		output_folder_contents.push_back(x.path().filename().string());
+	}
+	
+	for(auto && [ includes, tag ] :
+		mpl::detail::zip_impl_std_tuple_vector{}(std::move(includes_seqs), std::move(tags))
+	) {
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):output_paths";
+		// test for existing files before starting decomposition
+		std::vector<theta_field_path> output_paths = paths;
+		
+		for(auto & path : output_paths) {
+			BOOST_ASSERT(path.domain_num() == domain_num);
+			
+			// transform input paths to output paths
+			path.folder() = { cmd.o_opts.path };
+			path.prefix() = cmd.o_opts.prefix + '_' + tag;
+			
+			if (mpl::contains(output_folder_contents, path.full_path().filename().string()) && !cmd.o_opts.overwrite) {
+				BOOST_THROW_EXCEPTION((
+					fs::filesystem_error{
+						(boost::format("output file %s already exists in folder %s") 
+							% path.filename().string()
+							% path.full_path().parent_path().string()).str(),
+						make_error_code(boost::system::errc::file_exists)
+					}
+				));
+			}
+		}
+		
+		auto stats_path = make_stats_output_path({ cmd.o_opts.path }, cmd.o_opts.prefix, tag, domain_num);
+		if (mpl::contains(output_folder_contents, stats_path.filename().string()) && !cmd.o_opts.overwrite) {
+			BOOST_THROW_EXCEPTION((
+				fs::filesystem_error{
+					(boost::format("stats file %s already exists in folder %s")
+						% stats_path.string()
+						% stats_path.parent_path().string()).str(),
+					make_error_code(boost::system::errc::file_exists)
+				}
+			));
+		}
+		
+		mpl::pca_filter_result<
+			theta_field_matrix,
+			std::vector<double>
+		> reduced = decompose_with_pca(
+			series,
 			HBRS_MPL_FWD(includes),
 			cmd.pca_opts.backend,
 			cmd.pca_opts.center,
-			cmd.pca_opts.normalize,
-			{ cmd.o_opts.path },
-			cmd.o_opts.prefix,
-			HBRS_MPL_FWD(tag),
+			cmd.pca_opts.normalize
+		);
+		
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):read_theta_fields:global_id";
+		{
+			BOOST_ASSERT(reduced.data().size().n() == global_ids.size());
+			
+			for(std::size_t i = 0; i < reduced.data().size().n(); ++i) {
+				auto const& src = global_ids[i].global_id();
+				auto & tgt = reduced.data().data()[i].global_id();
+				
+				BOOST_ASSERT(mpi::comm_size() > 1
+					? src.size() == reduced.data().data()[i].x_velocity().size() /* distributed */
+					: src.size() == 0
+				);
+				
+				tgt = src;
+			}
+		}
+		
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):write_theta_fields";
+		write_theta_fields(
+			mpl::detail::zip_impl_std_tuple_vector{}(std::move(reduced.data().data()), std::move(output_paths)),
 			cmd.o_opts.overwrite
 		);
+		
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):write_stats";
+		write_stats(std::move(reduced.latent()), stats_path);
+		
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):update_output_folder_contents";
+		// update our output folder listing
+		for(theta_field_path & output_path : output_paths) {
+			output_folder_contents.push_back(output_path.full_path().filename().string());
+		}
+		output_folder_contents.push_back(stats_path.filename().string());
 	}
+	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):end";
 }
 
 HBRS_THETA_UTILS_NAMESPACE_END
