@@ -221,19 +221,19 @@ distributed_reduce(
 	std::function<bool(std::size_t)> keep,
 	mpl::pca_control<bool,bool,bool> ctrl
 ) {
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:begin";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "distributed_reduce:begin";
 	auto series_sz = series.size();
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:scatter";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "distributed_reduce:scatter";
 	auto distributed = scatter(
 		std::move(series),
 		detail::scatter_control<detail::theta_field_distribution_2>{{}}
 	);
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:transpose_reduce_transpose";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "distributed_reduce:transpose_reduce_transpose";
 	auto filtered = transpose_reduce_transpose(std::move(distributed), keep, ctrl);
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:gather";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "distributed_reduce:gather";
 	auto data = gather(
 		std::move(filtered.data()),
 		detail::gather_control<
@@ -243,7 +243,7 @@ distributed_reduce(
 	);
 	BOOST_ASSERT(data.size() == series_sz);
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:to_std_vector";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "distributed_reduce:to_std_vector";
 	auto latent = hana::to<hana::ext::std::vector_tag>(std::move(filtered.latent()));
 	
 	#if !defined(NDEBUG)
@@ -267,7 +267,7 @@ distributed_reduce(
 	}
 	#endif
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:distributed_reduce:end";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "distributed_reduce:end";
 	return {data, latent};
 }
 #endif //! HBRS_MPL_ENABLE_ELEMENTAL
@@ -287,7 +287,7 @@ reduce(
 	std::function<bool(std::size_t)> keep,
 	mpl::pca_control<bool,bool,bool> ctrl
 ) {
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:reduce:begin";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "reduce:begin";
 	BOOST_ASSERT(mpi::comm_size() == 1);
 	
 	auto copy_and_transform =
@@ -312,7 +312,7 @@ reduce(
 		series
 	);
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:reduce:end";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "reduce:end";
 	return HBRS_MPL_FWD(reduced);
 }
 #endif // !( defined(HBRS_MPL_ENABLE_MATLAB) || defined(HBRS_MPL_ENABLE_ELEMENTAL) )
@@ -325,7 +325,7 @@ decompose_with_pca(
 	bool center,
 	bool normalize
 ) {
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:begin";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "decompose_with_pca:begin";
 	
 	if ((mpi::comm_size() > 1) && (backend != pca_backend::elemental_mpi)) {
 		BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{backend});
@@ -368,7 +368,7 @@ decompose_with_pca(
 			BOOST_THROW_EXCEPTION(invalid_backend_exception{} << errinfo_pca_backend{backend});
 	};
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:decompose_with_pca:end";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "decompose_with_pca:end";
 	return reduced;
 }
 
@@ -376,7 +376,7 @@ decompose_with_pca(
 
 void
 execute(pca_cmd cmd) {
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):begin";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):begin";
 	BOOST_ASSERT(mpi::initialized());
 	
 	auto paths = filter_theta_fields_by_domain_num(
@@ -411,7 +411,7 @@ execute(pca_cmd cmd) {
 	auto tags = cmd.pca_opts.pc_nr_seqs.empty() == false ? cmd.pca_opts.pc_nr_seqs : std::vector<std::string>{"all"};
 	BOOST_ASSERT(includes_seqs.size() == tags.size());
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):list_output_folder";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):list_output_folder";
 	// Listing folders might be slow for remote storage, e.g. NFS shares.
 	// This applies to e.g. exist(), operator==(path,path) and equivalent() in namespace boost::filesystem.
 	// Thus we list the output folder just once and then just check for existing filenames by string comparison later.
@@ -420,7 +420,7 @@ execute(pca_cmd cmd) {
 		output_folder_contents.push_back(x.path().filename().string());
 	}
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):generate_output_paths";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):generate_output_paths";
 	// Generate output paths and test for existance before calling read_theta_fields which is slow
 	struct pca_paths {
 		std::vector<theta_field_path> series;
@@ -429,7 +429,7 @@ execute(pca_cmd cmd) {
 	
 	std::vector<pca_paths> output_paths_set;
 	for(auto && tag : tags) {
-		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):output_paths:tag=" << tag;
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):output_paths:tag=" << tag;
 		// test for existing files before starting decomposition
 		std::vector<theta_field_path> output_paths = paths;
 		for(auto & path : output_paths) {
@@ -472,12 +472,12 @@ execute(pca_cmd cmd) {
 		output_folder_contents.push_back(stats_path.filename().string());
 	}
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):read_theta_fields:*_velocity";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):read_theta_fields:*_velocity";
 	std::vector<theta_field> const series = read_theta_fields(paths, {".*_velocity"});
 	BOOST_ASSERT(series.at(0).ndomains() == mpi::comm_size()); //TODO: Turn assertion into exception?
 	// TODO: Warn user that his theta_field was computed with n domains but his current number of mpi processes is different!
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):read_theta_fields:global_id";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):read_theta_fields:global_id";
 	// we need global_id field if distributed, e.g. for visualization
 	std::vector<theta_field> const global_ids = read_theta_fields(paths, {"global_id"});
 	BOOST_ASSERT(mpi::comm_size() > 1
@@ -488,7 +488,7 @@ execute(pca_cmd cmd) {
 	for(auto && [ includes, output_paths ] :
 		mpl::detail::zip_impl_std_tuple_vector{}(std::move(includes_seqs), std::move(output_paths_set))
 	) {
-		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):decompose_with_pca";
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):decompose_with_pca";
 		mpl::pca_filter_result<
 			theta_field_matrix,
 			std::vector<double>
@@ -500,7 +500,7 @@ execute(pca_cmd cmd) {
 			cmd.pca_opts.normalize
 		);
 		
-		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):assign_global_id";
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):assign_global_id";
 		{
 			BOOST_ASSERT(reduced.data().size().n() == global_ids.size());
 			
@@ -517,17 +517,17 @@ execute(pca_cmd cmd) {
 			}
 		}
 		
-		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):write_theta_fields";
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):write_theta_fields";
 		write_theta_fields(
 			mpl::detail::zip_impl_std_tuple_vector{}(std::move(reduced.data().data()), std::move(output_paths.series)),
 			cmd.o_opts.overwrite
 		);
 		
-		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):write_stats";
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):write_stats";
 		write_stats(std::move(reduced.latent()), output_paths.stats);
 	}
 	
-	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):end";
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):end";
 }
 
 HBRS_THETA_UTILS_NAMESPACE_END
