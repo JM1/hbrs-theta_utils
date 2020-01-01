@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2020 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include <hbrs/theta_utils/dt/command.hpp>
 #include <hbrs/mpl/detail/mpi.hpp>
+#include <hbrs/mpl/detail/log.hpp>
 #include <hbrs/theta_utils/dt/theta_field.hpp>
 #include <hbrs/theta_utils/dt/theta_grid.hpp>
 #include <hbrs/theta_utils/detail/vtk.hpp>
@@ -34,8 +35,10 @@ namespace mpi = hbrs::mpl::detail::mpi;
 
 void
 execute(visualize_cmd cmd) {
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(visualize_cmd):begin";
 	BOOST_ASSERT(mpi::initialized());
 	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(visualize_cmd):find_theta_grid";
 	boost::optional<theta_grid_path> grid_path = find_theta_grid(cmd.i_opts.path, cmd.i_opts.grid_prefix);
 	if (!grid_path) {
 		BOOST_THROW_EXCEPTION((
@@ -46,6 +49,7 @@ execute(visualize_cmd cmd) {
 		));
 	}
 	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(visualize_cmd):find_theta_fields";
 	std::vector<theta_field_path> field_paths = filter_theta_fields_by_domain_num(
 		find_theta_fields(cmd.i_opts.path, cmd.i_opts.pval_prefix),
 		mpi::comm_size() > 1
@@ -70,6 +74,7 @@ execute(visualize_cmd cmd) {
 		));
 	}
 	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(visualize_cmd):test_naming_scheme";
 	{
 		auto const& first = field_paths[0];
 		for(auto const& path : field_paths) {
@@ -82,6 +87,7 @@ execute(visualize_cmd cmd) {
 		}
 	}
 	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(visualize_cmd):convert_to_vtk";
 	convert_to_vtk(
 		*grid_path,
 		field_paths,
@@ -92,6 +98,7 @@ execute(visualize_cmd cmd) {
 		cmd.v_opts.simple_numbering,
 		cmd.v_opts.format,
 		cmd.o_opts.overwrite);
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(visualize_cmd):end";
 }
 
 HBRS_THETA_UTILS_NAMESPACE_END
