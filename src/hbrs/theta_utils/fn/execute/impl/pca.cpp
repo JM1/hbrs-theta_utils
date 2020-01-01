@@ -429,7 +429,7 @@ execute(pca_cmd cmd) {
 	
 	std::vector<pca_paths> output_paths_set;
 	for(auto && tag : tags) {
-		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):output_paths";
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):output_paths:tag=" << tag;
 		// test for existing files before starting decomposition
 		std::vector<theta_field_path> output_paths = paths;
 		for(auto & path : output_paths) {
@@ -477,6 +477,7 @@ execute(pca_cmd cmd) {
 	BOOST_ASSERT(series.at(0).ndomains() == mpi::comm_size()); //TODO: Turn assertion into exception?
 	// TODO: Warn user that his theta_field was computed with n domains but his current number of mpi processes is different!
 	
+	HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):read_theta_fields:global_id";
 	// we need global_id field if distributed, e.g. for visualization
 	std::vector<theta_field> const global_ids = read_theta_fields(paths, {"global_id"});
 	BOOST_ASSERT(mpi::comm_size() > 1
@@ -487,6 +488,7 @@ execute(pca_cmd cmd) {
 	for(auto && [ includes, output_paths ] :
 		mpl::detail::zip_impl_std_tuple_vector{}(std::move(includes_seqs), std::move(output_paths_set))
 	) {
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):decompose_with_pca";
 		mpl::pca_filter_result<
 			theta_field_matrix,
 			std::vector<double>
@@ -498,7 +500,7 @@ execute(pca_cmd cmd) {
 			cmd.pca_opts.normalize
 		);
 		
-		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):read_theta_fields:global_id";
+		HBRS_MPL_LOG_TRIVIAL(debug) << "execute_pca:execute(pca_cmd):assign_global_id";
 		{
 			BOOST_ASSERT(reduced.data().size().n() == global_ids.size());
 			
