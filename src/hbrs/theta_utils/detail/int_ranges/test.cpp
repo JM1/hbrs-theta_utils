@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2018-2020 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,19 @@ BOOST_AUTO_TEST_CASE(read) {
 		int_ranges<std::size_t>{{0, std::numeric_limits<std::size_t>::max()-1}},
 		std::numeric_limits<std::size_t>::max()
 	) == false);
+	
+	// test empty intervals
+	for(std::size_t i : {std::numeric_limits<std::size_t>::min(), std::size_t(0), std::numeric_limits<std::size_t>::max()}) {
+		BOOST_TEST(in_int_ranges(
+			int_ranges<std::size_t>{{0, 0}},
+			i
+		) == false, i << " is in int_ranges{{0, 0}}");
+		
+		BOOST_TEST(in_int_ranges(
+			int_ranges<std::size_t>{{std::numeric_limits<std::size_t>::max(), std::numeric_limits<std::size_t>::max()}},
+			i
+		) == false, i << " is in int_ranges{{numeric_limits<size_t>::max(), numeric_limits<size_t>::max(}}");
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

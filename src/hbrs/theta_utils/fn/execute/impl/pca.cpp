@@ -94,6 +94,11 @@ parse_nr_sequences(std::vector<std::string> const& rngs_seq) {
 	nr_rngs_seq.reserve(rngs_seq.size());
 	
 	for(auto rngs : rngs_seq) {
+		if (boost::equals(rngs, "none")) {
+			nr_rngs_seq.push_back(number_ranges{ number_range{0, 0} });
+			continue;
+		}
+
 		boost::replace_all(rngs, "first", boost::lexical_cast<std::string>(min));
 		boost::replace_all(rngs, "last", boost::lexical_cast<std::string>(max));
 		number_ranges nr_rngs;

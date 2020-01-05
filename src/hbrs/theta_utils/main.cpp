@@ -345,7 +345,7 @@ parse_options(int argc, char *argv[]) {
 			(
 				"pcs",
 				bpo::value< std::vector<std::string> >()->multitoken()->value_name("SELECTIONS"),
-				"include only principal components within SELECTIONS, e.g. \"0\", \"0,1,2\", \"0-2,6-8\", \"first\" (equal to \"0\") or \"last\". Multiple listings are possible."
+				"include only principal components within SELECTIONS, e.g. \"0\", \"0,1,2\", \"0-2,6-8\", \"first\" (equal to \"0\"), \"last\" or \"none\". Multiple listings are possible."
 			)
 			(
 				"center",

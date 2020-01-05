@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2020 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -117,7 +117,10 @@ template <typename Integer>
 bool
 in_int_ranges(int_ranges<Integer> const& s, Integer const& val) {
 	for(auto const& rng : s) {
-		if (*rng.begin() <= val && val <= *(rng.end()-1)) {
+		if (
+			!rng.empty() /* nothing is in an empty interval */ &&
+			(rng.front() <= val && val <= rng.back())
+		) {
 			return true;
 		}
 	}
