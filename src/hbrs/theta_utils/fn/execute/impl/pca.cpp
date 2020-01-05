@@ -84,7 +84,8 @@ typedef std::vector<number_ranges> number_ranges_sequence;
 number_ranges_sequence
 parse_nr_sequences(std::vector<std::string> const& rngs_seq) {
 	static constexpr auto min = 0;
-	static constexpr auto max = std::numeric_limits<std::size_t>::max();
+	/* number ranges are half-open ranges and thus max-1 is the maximum value of numbers */
+	static constexpr auto max = std::numeric_limits<std::size_t>::max()-1;
 	
 	if (rngs_seq.empty()) {
 		return { number_ranges{ number_range{min, max} } };
@@ -106,7 +107,7 @@ parse_nr_sequences(std::vector<std::string> const& rngs_seq) {
 		
 		if (valid) {
 			for(auto & nr_rng : nr_rngs) {
-				if (nr_rng.empty() || (*nr_rng.begin() < min)) {
+				if (nr_rng.empty() || (nr_rng.front() < min)) {
 					valid = false;
 					break;
 				}

@@ -29,6 +29,9 @@ BOOST_AUTO_TEST_SUITE(int_ranges_test)
 BOOST_AUTO_TEST_CASE(read) {
 	using namespace hbrs::theta_utils;
 	using namespace hbrs::theta_utils::detail;
+	
+	BOOST_TEST((int_range<std::size_t>{0, std::numeric_limits<std::size_t>::max()}.empty() == false));
+	
 	std::vector<std::string> seqs {
 		{"1-3"},
 		{"1-3,7-9"}

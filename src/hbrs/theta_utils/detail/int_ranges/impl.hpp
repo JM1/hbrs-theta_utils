@@ -75,6 +75,12 @@ struct int_ranges_grammar : qi::grammar<Iterator, int_ranges<Integer>()> {
 				return;
 			}
 			
+			if (high == std::numeric_limits<Integer>::max()) {
+				// we cannot compute high+1 for half-open range
+				pass = false;
+				return;
+			}
+			
 			seqs.push_back(int_range<Integer>{low, high+1});
 			pass = true;
 		};
@@ -90,6 +96,13 @@ struct int_ranges_grammar : qi::grammar<Iterator, int_ranges<Integer>()> {
 			} else {
 				no = fusion::at_c<0>(attr);
 			}
+			
+			if (no == std::numeric_limits<Integer>::max()) {
+				// we cannot compute no+1 for half-open range
+				pass = false;
+				return;
+			}
+			
 			seqs.push_back(int_range<Integer>{no,no+1});
 			pass = true;
 		};
