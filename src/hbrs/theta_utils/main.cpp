@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2020 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -355,6 +355,10 @@ parse_options(int argc, char *argv[]) {
 				"normalize",
 				"divide each variable (more precisely: all observations of a variable) by its standard deviation"
 			)
+			(
+				"keep-centered",
+				"do not re-add variable means to pca-filtered data matrix"
+			)
 			;
 		
 		bpo::parsed_options unreg_parsed = bpo::command_line_parser(unreg_opts).options(cmd_options).run();
@@ -431,6 +435,7 @@ parse_options(int argc, char *argv[]) {
 		
 		cmd.pca_opts.center = (vm.count("center") > 0);
 		cmd.pca_opts.normalize = (vm.count("normalize") > 0);
+		cmd.pca_opts.keep_centered = (vm.count("keep-centered") > 0);
 		
 		return cmd;
 	}

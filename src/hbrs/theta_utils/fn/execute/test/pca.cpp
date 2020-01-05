@@ -1,4 +1,4 @@
-/* Copyright (c) 2018-2019 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2018-2020 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,6 +32,12 @@
 #include <hbrs/theta_utils/detail/matrix.hpp>
 #include <hbrs/mpl/fn/zip.hpp>
 #include <hbrs/mpl/fn/equal.hpp>
+#include <hbrs/mpl/fn/plus.hpp>
+#include <hbrs/mpl/fn/expand.hpp>
+#include <hbrs/mpl/fn/size.hpp>
+#include <hbrs/mpl/fn/mean.hpp>
+#include <hbrs/mpl/fn/columns.hpp>
+#include <hbrs/mpl/fn/transpose.hpp>
 
 #include <hbrs/mpl/dt/sm.hpp>
 #include <hbrs/mpl/dt/ctsav.hpp>
@@ -108,7 +114,8 @@ BOOST_AUTO_TEST_CASE(write_read,
 		hana::to_tuple(hana::make_range(hana::size_c<0>, hana::length(datasets))),
 		hana::make_tuple(theta_field_path::naming_scheme::theta, theta_field_path::naming_scheme::tau_unsteady),
 		hana::make_tuple(hana::true_c, hana::false_c) /* center */,
-		hana::make_tuple(hana::true_c, hana::false_c) /* normalize */
+		hana::make_tuple(hana::true_c, hana::false_c) /* normalize */,
+		hana::make_tuple(hana::true_c, hana::false_c) /* keep_centered */
 	);
 	
 	static constexpr auto factories = hana::drop_back(hana::make_tuple(
@@ -151,6 +158,7 @@ BOOST_AUTO_TEST_CASE(write_read,
 		auto const& scheme = hana::at_c<1>(cfg);
 		auto const& center = hana::at_c<2>(cfg);
 		auto const& normalize = hana::at_c<3>(cfg);
+		auto const& keep_centered = hana::at_c<4>(cfg);
 		
 		BOOST_TEST_MESSAGE("dataset_nr=" << dataset_nr);
 		BOOST_TEST_MESSAGE(
@@ -159,6 +167,7 @@ BOOST_AUTO_TEST_CASE(write_read,
 		);
 		BOOST_TEST_MESSAGE("center=" << (center ? "true" : "false"));
 		BOOST_TEST_MESSAGE("normalize=" << (normalize ? "true" : "false"));
+		BOOST_TEST_MESSAGE("keep_centered=" << (keep_centered ? "true" : "false"));
 		
 		auto const& dataset = hana::at(datasets, dataset_nr);
 		
@@ -197,12 +206,10 @@ BOOST_AUTO_TEST_CASE(write_read,
 				
 				auto testcase = hana::at(testcases, i);
 				
-				
 				auto scatter = hana::first(testcase);
 				auto gather = hana::second(testcase);
 				
 				auto local_dataset = scatter(dataset);
-				
 				
 				hbrs::theta_utils::detail::io_fixture fxo{"pca_output"};
 				
@@ -250,9 +257,9 @@ BOOST_AUTO_TEST_CASE(write_read,
 					cmd.pca_opts.backend = pca_backend::elemental_mpi;
 					cmd.pca_opts.center = center;
 					cmd.pca_opts.normalize = normalize;
+					cmd.pca_opts.keep_centered = keep_centered;
 					execute(cmd);
 				}
-				
 				
 				auto all_paths = find_theta_fields(fxo.wd().path(), fxo.prefix() + "_all");
 				auto paths = filter_theta_fields_by_domain_num(
@@ -292,8 +299,26 @@ BOOST_AUTO_TEST_CASE(write_read,
 			[&](auto i) {
 				auto impl_idx = hana::at(supported_indices, i);
 				auto result = hana::at(results, i);
+				
 				BOOST_TEST_MESSAGE("Comparing original data and reconstructed data computed by impl nr " << impl_idx);
-				HBRS_MPL_TEST_MMEQ(dataset, result, false);
+				
+				if (center && keep_centered) {
+					// if matrix was centered and mean was not readded after pca,
+					// then we have to add mean now to be able to do a comparison
+					auto testcase = hana::at(testcases, impl_idx);
+					auto scatter = hana::first(testcase);
+					auto gather = hana::second(testcase);
+					auto dataset_ = gather(scatter(dataset), sz_);
+					// matrix will be transposed before pca_cmd, thus
+					// mean must be computed from transposed matrix.
+					auto dataset_t = transpose(dataset_);
+					auto transpose_t = transpose(result);
+					auto result_w_mean_t = (*plus)(transpose_t, expand(mean(columns(dataset_t)), size(dataset_t)));
+					auto result_w_mean = transpose(result_w_mean_t);
+					HBRS_MPL_TEST_MMEQ(dataset, result_w_mean, false);
+				} else {
+					HBRS_MPL_TEST_MMEQ(dataset, result, false);
+				}
 			}
 		);
 		

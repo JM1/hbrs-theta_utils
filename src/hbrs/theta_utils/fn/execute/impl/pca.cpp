@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2019 Jakob Meng, <jakobmeng@web.de>
+/* Copyright (c) 2016-2020 Jakob Meng, <jakobmeng@web.de>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +24,9 @@
 #include <hbrs/theta_utils/detail/matrix.hpp>
 #include <hbrs/theta_utils/detail/scatter.hpp>
 #include <hbrs/theta_utils/detail/gather.hpp>
-#include <hbrs/mpl/dt/pca_filter_result.hpp>
 #include <hbrs/mpl/dt/pca_control.hpp>
+#include <hbrs/mpl/dt/pca_filter_control.hpp>
+#include <hbrs/mpl/dt/pca_filter_result.hpp>
 
 #include <hbrs/mpl/fn/pca_filter.hpp>
 #include <hbrs/mpl/fn/size.hpp>
@@ -190,7 +191,7 @@ decltype(auto)
 transpose_reduce_transpose(
 	Matrix && data,
 	std::function<bool(std::size_t)> keep,
-	mpl::pca_control<bool,bool,bool> ctrl
+	mpl::pca_filter_control<mpl::pca_control<bool,bool,bool>,bool> ctrl
 ) {
 	
 	// NOTE: in our data matrix, rows correspond to variables and columns correspond to observations,
@@ -219,7 +220,7 @@ distributed_reduce(
 	theta_field_matrix series,
 	Backend,
 	std::function<bool(std::size_t)> keep,
-	mpl::pca_control<bool,bool,bool> ctrl
+	mpl::pca_filter_control<mpl::pca_control<bool,bool,bool>,bool> ctrl
 ) {
 	HBRS_MPL_LOG_TRIVIAL(debug) << "distributed_reduce:begin";
 	auto series_sz = series.size();
@@ -253,10 +254,10 @@ distributed_reduce(
 		std::size_t data_m = (*mpl::m)(data_sz);
 		std::size_t data_n = (*mpl::n)(data_sz);
 		//NOTE: pca was applied to transposed data matrix
-		auto DOF = data_n - (ctrl.center() ? 1 : 0);
+		auto DOF = data_n - (ctrl.pca_control().center() ? 1 : 0);
 		
 		if (DOF < data_m) {
-			if (ctrl.economy()) {
+			if (ctrl.pca_control().economy()) {
 				BOOST_ASSERT(latent_sz == DOF);
 			} else {
 				BOOST_ASSERT(latent_sz == data_m);
@@ -285,7 +286,7 @@ reduce(
 	theta_field_matrix series,
 	Backend,
 	std::function<bool(std::size_t)> keep,
-	mpl::pca_control<bool,bool,bool> ctrl
+	mpl::pca_filter_control<mpl::pca_control<bool,bool,bool>,bool> ctrl
 ) {
 	HBRS_MPL_LOG_TRIVIAL(debug) << "reduce:begin";
 	BOOST_ASSERT(mpi::comm_size() == 1);
@@ -323,7 +324,8 @@ decompose_with_pca(
 	detail::int_ranges<std::size_t> const& includes,
 	pca_backend const& backend,
 	bool center,
-	bool normalize
+	bool normalize,
+	bool keep_centered
 ) {
 	HBRS_MPL_LOG_TRIVIAL(debug) << "decompose_with_pca:begin";
 	
@@ -335,14 +337,16 @@ decompose_with_pca(
 		return detail::in_int_ranges(includes, i); 
 	};
 	
-	mpl::pca_control<
-		bool,
-		bool,
+	mpl::pca_filter_control<
+		mpl::pca_control<bool,bool,bool>,
 		bool
 	> ctrl {
-		true /* economy */,
-		center,
-		normalize
+		{
+			true /* economy */,
+			center,
+			normalize
+		},
+		keep_centered
 	};
 	
 	mpl::pca_filter_result<
@@ -497,7 +501,8 @@ execute(pca_cmd cmd) {
 			HBRS_MPL_FWD(includes),
 			cmd.pca_opts.backend,
 			cmd.pca_opts.center,
-			cmd.pca_opts.normalize
+			cmd.pca_opts.normalize,
+            cmd.pca_opts.keep_centered
 		);
 		
 		HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):assign_global_id";
