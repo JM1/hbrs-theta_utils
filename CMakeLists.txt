@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 Jakob Meng, <jakobmeng@web.de>
+# Copyright (c) 2018-2020 Jakob Meng, <jakobmeng@web.de>
 #
 # Redistribution and use is allowed according to the terms of the BSD license.
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 #################### project settings ####################
 
-project(hbrs-theta_utils VERSION 2019.0.0.0)
+project(hbrs-theta_utils VERSION 2020.0.0.0)
 
 include(FeatureSummary)
 
@@ -30,7 +30,7 @@ set_package_properties(hbrs-mpl PROPERTIES
     PURPOSE "Required for linear algebra algorithms."
     TYPE REQUIRED)
 
-find_package(Boost 1.62 COMPONENTS unit_test_framework system thread serialization chrono program_options filesystem iostreams regex exception signals log)
+find_package(Boost 1.62 COMPONENTS unit_test_framework system thread serialization chrono program_options filesystem iostreams regex exception log)
 set_package_properties(Boost PROPERTIES
     PURPOSE "Required for meta programming, unit tests and others."
     TYPE REQUIRED)
