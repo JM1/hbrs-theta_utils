@@ -3,9 +3,13 @@
 
 `hbrs-theta_utils` is a postprocessing tool to CFD solver [TAU (and THETA)](http://tau.dlr.de/) for data-driven modal decompositions.
 TAU is for numerical flow simulations, e.g. predicting flows around airfoils of wind turbines or aircrafts.
-`hbrs-theta_utils` allows is to decompose these (in)compressible flows by various methods, e.g. [PCA/POD](https://en.wikipedia.org/wiki/Principal_component_analysis) or [DMD](https://en.wikipedia.org/wiki/Dynamic_mode_decomposition), to extract relevant features.
-It also allows to export these flow fields into a [VTK](https://vtk.org/) files for visualization, e.g. with [ParaView](https://www.paraview.org/).
-It is designed operate in parallel on distributed large-scale datasets at [HPC clusters (e.g. Platform for Scientific Computing at BRSU)](https://wr0.wr.inf.h-brs.de/wr/index.html).
+`hbrs-theta_utils` allows us to decompose these (in)compressible flows using various methods,
+e.g. [PCA/POD](https://en.wikipedia.org/wiki/Principal_component_analysis) or [DMD](https://en.wikipedia.org/wiki/Dynamic_mode_decomposition),
+to extract relevant features.
+It also allows to export these flow fields into a [VTK](https://vtk.org/) files for visualization,
+e.g. with [ParaView](https://www.paraview.org/).
+It is designed operate in parallel on distributed large-scale datasets at
+[HPC clusters (e.g. Platform for Scientific Computing at BRSU)](https://wr0.wr.inf.h-brs.de/wr/index.html).
 
 `hbrs-theta_utils` is a tool for coherent structure analysis in fluid dynamics.
 It helps scientists and engineers with characterizing energetic structures from data and thus making fluids e.g. more tractable to analysis and engineering design.
