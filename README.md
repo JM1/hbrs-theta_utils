@@ -74,6 +74,13 @@ docker run -ti jm1337/debian-dev-hbrs:buster
 
 # the following commands are executed from within the docker container
 
+# choose a compiler
+export CC=clang-7
+export CXX=clang++-7
+# or
+#export CC=gcc-8
+#export CXX=g++-8
+
 # fetch, compile and install prerequisites
 git clone --depth 1 https://github.com/JM1/hbrs-cmake.git
 cd hbrs-cmake
