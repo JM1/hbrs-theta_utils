@@ -69,6 +69,8 @@ docker pull jm1337/debian-dev-hbrs:buster
 
 # log into docker container
 docker run -ti jm1337/debian-dev-hbrs:buster
+# or for a persistent home directory, e.g.
+docker run -ti -v /HOST_DIR:/home/devil/ -u devil jm1337/debian-dev-hbrs:buster
 
 
 
