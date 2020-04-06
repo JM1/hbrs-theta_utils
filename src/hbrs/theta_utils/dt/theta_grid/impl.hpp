@@ -53,6 +53,8 @@ struct theta_grid_path {
 
 struct theta_grid {
 public:
+    
+    //TODO: Support other cell types? e.g. https://vtk.org/doc/nightly/html/vtkCellType_8h.html
 	typedef std::array<int,4> tetraeder;
 	typedef std::array<int,6> prism;
 	typedef std::array<int,8> hexaeder;
