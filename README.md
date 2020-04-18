@@ -57,10 +57,20 @@ References:
 
 # How to build this code using Docker
 
-```sh
-# install Docker CE for Debian or derivatives
-# please follow guide at https://docs.docker.com/install/linux/docker-ce/debian/
+## Install Docker
 
+* On `Debian 10 (Buster)` just run `sudo apt install docker.io`
+  or follow the [official install guide](https://docs.docker.com/engine/install/debian/) for Docker Engine on Debian
+* On `Ubuntu 18.04 LTS (Bionic Beaver)` just run `sudo apt install docker.io` (from `bionic/universe` repositories)
+  or follow the [official install guide](https://docs.docker.com/engine/install/ubuntu/) for Docker Engine on Ubuntu
+* On `Windows 10` follow the [official install guide](https://docs.docker.com/docker-for-windows/install/)
+  for Docker Desktop on Windows
+* On `Mac` follow the [official install guide](https://docs.docker.com/docker-for-mac/install/) 
+  for Docker Desktop on Mac
+
+## Setup and Run Container
+
+```sh
 # docker version 18.06.0-ce or later is recommended
 docker --version
 
@@ -69,13 +79,16 @@ docker pull jm1337/debian-dev-hbrs:buster
 
 # log into docker container
 docker run -ti jm1337/debian-dev-hbrs:buster
-# or for a persistent home directory, e.g.
+# or using a persistent home directory, e.g.
 docker run -ti -v /HOST_DIR:/home/devil/ -u devil jm1337/debian-dev-hbrs:buster
+# or using a persistent home directory on Windows hosts, e.g.
+docker run -ti -v C:\YOUR_DIR:/home/devil/ -u devil jm1337/debian-dev-hbrs:buster
+```
 
+## Build code inside Container
 
-
-# the following commands are executed from within the docker container
-
+Execute the following commands within the Docker Container:
+```sh
 # choose a compiler
 export CC=clang-7
 export CXX=clang++-7
