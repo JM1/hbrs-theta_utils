@@ -34,7 +34,9 @@ endif()
 if(@VTK_FOUND@)
     find_dependency(VTK)
 endif()
-
+if(@ParaView_FOUND@)
+    find_dependency(ParaView)
+endif()
 
 
 set(hbrs-theta_utils_CXX_COMPILER_ID "@CMAKE_CXX_COMPILER_ID@")

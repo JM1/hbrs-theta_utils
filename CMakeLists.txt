@@ -47,8 +47,25 @@ set_package_properties(netcdf PROPERTIES
 
 find_package(VTK)
 set_package_properties(VTK PROPERTIES
-    PURPOSE "Required for writing visualization output files."
-    TYPE REQUIRED)
+    PURPOSE "Required for writing visualization output files.")
+
+if(NOT VTK_FOUND)
+    # We will fall back to ParaView's internal VTK install if a standalone VTK install is not found
+    find_package(ParaView)
+    set_package_properties(ParaView PROPERTIES
+        PURPOSE "Required for writing visualization output files.")
+endif()
+
+# Either ParaView..
+if(ParaView_FOUND)
+    set_package_properties(ParaView PROPERTIES
+        TYPE REQUIRED)
+endif()
+# ..or VTK is required
+if(NOT VTK_FOUND AND NOT ParaView_FOUND)
+    set_package_properties(VTK PROPERTIES
+        TYPE REQUIRED)
+endif()
 
 feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKAGES)
 
@@ -58,7 +75,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
 set(CMAKE_INCLUDE_DIRECTORIES_PROJECT_BEFORE ON)
 # Src: kdelibs/cmake/modules/KDE4Defaults.cmake
 
-if(VTK_FOUND)
+if(VTK_FOUND AND VTK_USE_FILE)
     include(${VTK_USE_FILE})
 endif()
 
