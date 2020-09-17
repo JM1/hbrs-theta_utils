@@ -142,6 +142,12 @@ if(NOT HBRS_THETA_UTILS_HAS_CXX_FCONSTEXPR_BACKTRACE_LIMIT)
     message(WARNING "Your C++ compiler ${CMAKE_CXX_COMPILER} does not support '-fconstexpr-backtrace-limit=${CXX_CONSTEXPR_BACKTRACE_LIMIT}', use it at your own risk.")
 endif()
 
+include(CheckIPOSupported)
+check_ipo_supported(RESULT HBRS_THETA_UTILS_HAS_IPO)
+if(HBRS_THETA_UTILS_HAS_IPO)
+	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+endif()
+
 #################### install settings ####################
 
 include(GNUInstallDirs)
