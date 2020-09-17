@@ -23,10 +23,10 @@
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
-struct version_cmd;
-struct help_cmd;
-struct visualize_cmd;
-struct pca_cmd;
+struct HBRS_THETA_UTILS_API version_cmd;
+struct HBRS_THETA_UTILS_API help_cmd;
+struct HBRS_THETA_UTILS_API visualize_cmd;
+struct HBRS_THETA_UTILS_API pca_cmd;
 
 HBRS_THETA_UTILS_NAMESPACE_END
 

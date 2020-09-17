@@ -30,7 +30,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
-struct nc_variable {
+struct HBRS_THETA_UTILS_API nc_variable {
 public:
 	/* TODO: Add more data types here and in nc_ctnr.cpp!
 	 * Ref.: 

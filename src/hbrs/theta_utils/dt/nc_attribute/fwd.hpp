@@ -24,7 +24,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
-struct nc_attribute;
+struct HBRS_THETA_UTILS_API nc_attribute;
 struct nc_attribute_tag {};
 constexpr auto make_nc_attribute = hana::make<nc_attribute_tag>;
 constexpr auto to_nc_attribute = hana::to<nc_attribute_tag>;

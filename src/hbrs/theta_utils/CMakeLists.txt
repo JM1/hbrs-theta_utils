@@ -13,7 +13,7 @@ configure_file(
 
 #################### build ####################
 
-add_library(hbrs_theta_utils STATIC)
+add_library(hbrs_theta_utils SHARED)
 
 get_target_property(hbrs_theta_utils_TARGET_TYPE hbrs_theta_utils TYPE)
 if (hbrs_theta_utils_TARGET_TYPE STREQUAL "STATIC_LIBRARY")

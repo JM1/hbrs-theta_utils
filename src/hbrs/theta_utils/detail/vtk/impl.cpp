@@ -23,6 +23,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
 /* unused */
+HBRS_THETA_UTILS_API
 static void
 write_vtk_legacy_ascii(theta_grid const& grid, theta_field const& field, std::ostream & out) {
 	static const char * type = "float" /* TODO: change to double? */;
@@ -202,6 +203,7 @@ typedef Observer<vtkCommand::ErrorEvent, const char *> ErrorObserver;
 typedef Observer<vtkCommand::WarningEvent, const char *> WarningObserver;
 /* namespace detail */ }
 
+HBRS_THETA_UTILS_API
 vtkSmartPointer<vtkUnstructuredGrid>
 make_vtk_unstructured_grid(theta_grid const& grid, theta_field const& field) {
 	static constexpr auto INVALID_ID = std::numeric_limits<std::size_t>::max();
@@ -799,6 +801,7 @@ make_vtk_unstructured_grid(theta_grid const& grid, theta_field const& field) {
 	return vtk_grid;
 }
 
+HBRS_THETA_UTILS_API
 void
 write_vtk_legacy_ascii(vtkSmartPointer<vtkUnstructuredGrid> grid, char const * file_path) {
 	vtkNew<vtkUnstructuredGridWriter> wtr;
@@ -816,6 +819,7 @@ write_vtk_legacy_ascii(vtkSmartPointer<vtkUnstructuredGrid> grid, char const * f
 	wtr->Write();
 }
 
+HBRS_THETA_UTILS_API
 void
 write_vtk_xml_binary(vtkSmartPointer<vtkUnstructuredGrid> grid, char const * file_path) {
 	vtkNew<vtkXMLUnstructuredGridWriter> wtr;
@@ -835,6 +839,7 @@ write_vtk_xml_binary(vtkSmartPointer<vtkUnstructuredGrid> grid, char const * fil
 	wtr->Write();
 }
 
+HBRS_THETA_UTILS_API
 void
 write_vtk_xml_binary_parallel(vtkSmartPointer<vtkUnstructuredGrid> grid, char const * file_path) {
 	vtkSmartPointer<vtkMPIController> ctrl = vtkSmartPointer<vtkMPIController>::New();
@@ -1004,7 +1009,7 @@ safe_write(fs::path path, bool overwrite) {
 	}
 }
 
-
+HBRS_THETA_UTILS_API
 void
 convert_to_vtk(
 	theta_grid_path const& grid_path,

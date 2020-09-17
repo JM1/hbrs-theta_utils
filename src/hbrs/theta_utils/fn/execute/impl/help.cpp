@@ -21,6 +21,7 @@
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
+HBRS_THETA_UTILS_API
 void
 execute(help_cmd cmd) {
 	std::cout << cmd.help << std::endl;

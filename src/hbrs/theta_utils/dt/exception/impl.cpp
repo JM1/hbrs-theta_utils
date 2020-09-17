@@ -26,6 +26,7 @@ HBRS_THETA_UTILS_DEFINE_ATTR(path, fs::path, domain_num_mismatch_error_info)
 HBRS_THETA_UTILS_DEFINE_ATTR(expected, int, domain_num_mismatch_error_info)
 HBRS_THETA_UTILS_DEFINE_ATTR(got, boost::optional<int>, domain_num_mismatch_error_info)
 
+HBRS_THETA_UTILS_API
 std::string
 to_string(errinfo_ambiguous_field_paths e) {
 	fs::path const& first = std::get<0>(e.value());

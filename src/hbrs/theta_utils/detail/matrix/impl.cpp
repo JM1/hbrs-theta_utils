@@ -22,6 +22,7 @@ namespace boost { namespace hana {
 
 #ifdef HBRS_MPL_ENABLE_MATLAB
 
+HBRS_THETA_UTILS_API
 hbrs::mpl::ml_matrix<double>
 to_impl<
 	hbrs::mpl::ml_matrix_tag,
@@ -40,6 +41,7 @@ to_impl<
 
 #ifdef HBRS_MPL_ENABLE_ELEMENTAL
 
+HBRS_THETA_UTILS_API
 hbrs::mpl::el_matrix<double>
 to_impl<
 	hbrs::mpl::el_matrix_tag,

@@ -34,20 +34,25 @@ namespace fs = boost::filesystem;
 
 enum class vtk_file_format { legacy_ascii, xml_binary };
 
-struct vtk_path;
+struct HBRS_THETA_UTILS_API vtk_path;
 
+HBRS_THETA_UTILS_API
 vtkSmartPointer<vtkUnstructuredGrid>
 make_vtk_unstructured_grid(theta_grid const& grid, theta_field const& field);
 
+HBRS_THETA_UTILS_API
 void
 write_vtk_legacy_ascii(vtkSmartPointer<vtkUnstructuredGrid> grid, char const * file_path);
 
+HBRS_THETA_UTILS_API
 void
 write_vtk_xml_binary(vtkSmartPointer<vtkUnstructuredGrid> grid, char const * file_path);
 
+HBRS_THETA_UTILS_API
 void
 write_vtk_xml_binary_parallel(vtkSmartPointer<vtkUnstructuredGrid> grid, char const * file_path);
 
+HBRS_THETA_UTILS_API
 void
 convert_to_vtk(
 	theta_grid_path const& grid_path,

@@ -26,7 +26,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
-struct nc_exception;
+struct HBRS_THETA_UTILS_API nc_exception;
 struct nc_exception_tag {};
 constexpr auto make_nc_exception = hana::make<nc_exception_tag>;
 constexpr auto to_nc_exception = hana::to<nc_exception_tag>;

@@ -25,31 +25,31 @@
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
-struct generic_options {
+struct HBRS_THETA_UTILS_API generic_options {
 	std::size_t verbosity = 0;
 	bool debug = false;
 };
 
-struct theta_input_options {
+struct HBRS_THETA_UTILS_API theta_input_options {
 	std::string path;
 	std::string grid_prefix;
 	std::string pval_prefix;
 };
 
-struct theta_output_options {
+struct HBRS_THETA_UTILS_API theta_output_options {
 	std::string path;
 	std::string prefix;
 	bool overwrite;
 };
 
-struct visualize_options {
+struct HBRS_THETA_UTILS_API visualize_options {
 	std::vector<std::string> includes;
 	std::vector<std::string> excludes;
 	vtk_file_format format;
 	bool simple_numbering;
 };
 
-struct pca_options {
+struct HBRS_THETA_UTILS_API pca_options {
 	std::vector<std::string> pc_nr_seqs;
 	pca_backend backend;
 	bool center;

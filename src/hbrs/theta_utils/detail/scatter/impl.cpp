@@ -39,6 +39,7 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace mpi = hbrs::mpl::detail::mpi;
 namespace detail {
 
+HBRS_THETA_UTILS_API
 mpl::matrix_size<std::size_t, std::size_t>
 distributed_size(
 	theta_field_matrix const& series,
@@ -66,6 +67,7 @@ distributed_size(
 	return { gbl_m, gbl_min_n };
 }
 
+HBRS_THETA_UTILS_API
 mpl::matrix_size<std::size_t, std::size_t>
 distributed_size(
 	theta_field_matrix const& series,
@@ -96,6 +98,7 @@ distributed_size(
 
 #ifdef HBRS_MPL_ENABLE_ELEMENTAL
 
+HBRS_THETA_UTILS_API
 mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT>
 scatter(
 	theta_field_matrix const& from,
@@ -333,6 +336,7 @@ scatter(
 	return to;
 }
 
+HBRS_THETA_UTILS_API
 mpl::el_dist_matrix<double, El::VC, El::STAR, El::ELEMENT>
 scatter(
 	theta_field_matrix const& from,

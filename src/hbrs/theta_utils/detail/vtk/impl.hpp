@@ -25,7 +25,7 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 namespace fs = boost::filesystem;
 
-struct vtk_path {
+struct HBRS_THETA_UTILS_API vtk_path {
 	vtk_path(fs::path folder, std::string basename, bool distributed, vtk_file_format format);
 	vtk_path(vtk_path const&) = default;
 	vtk_path(vtk_path &&) = default;

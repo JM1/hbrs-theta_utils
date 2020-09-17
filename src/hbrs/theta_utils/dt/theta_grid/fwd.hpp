@@ -28,19 +28,21 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 namespace fs = boost::filesystem;
 
-struct theta_grid_path;
+struct HBRS_THETA_UTILS_API theta_grid_path;
 
-struct theta_grid;
+struct HBRS_THETA_UTILS_API theta_grid;
 struct theta_grid_tag {};
 constexpr auto make_theta_grid = hana::make<theta_grid_tag>;
 constexpr auto to_theta_grid = hana::to<theta_grid_tag>;
 
+HBRS_THETA_UTILS_API
 boost::optional<theta_grid_path>
 find_theta_grid(
 	fs::path const& dir,
 	std::string const& prefix
 );
 
+HBRS_THETA_UTILS_API
 theta_grid
 read_theta_grid(theta_grid_path const& path);
 

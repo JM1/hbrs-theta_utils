@@ -70,6 +70,7 @@ io_fixture::wd() const { return (wd_); }
 std::string const&
 io_fixture::prefix() const { return (prefix_); }
 
+HBRS_THETA_UTILS_API
 std::vector<theta_field_path>
 make_theta_field_paths(
 	fs::path const& dir,

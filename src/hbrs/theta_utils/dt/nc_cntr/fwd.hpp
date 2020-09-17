@@ -27,11 +27,12 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
-struct nc_cntr;
+struct HBRS_THETA_UTILS_API nc_cntr;
 struct nc_cntr_tag {};
 constexpr auto make_nc_cntr = hana::make<nc_cntr_tag>;
 constexpr auto to_nc_cntr = hana::to<nc_cntr_tag>;
 
+HBRS_THETA_UTILS_API
 nc_cntr
 read_nc_cntr(
 	std::string const& path,
@@ -39,6 +40,7 @@ read_nc_cntr(
 	std::vector<std::string> const& excludes = {} /*regex filter*/
 );
 
+HBRS_THETA_UTILS_API
 void
 write_nc_cntr(
 	nc_cntr const& cntr,

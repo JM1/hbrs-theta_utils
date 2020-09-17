@@ -51,7 +51,7 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 namespace mpl = hbrs::mpl;
 
-struct theta_field_matrix {
+struct HBRS_THETA_UTILS_API theta_field_matrix {
 public:
 	theta_field_matrix(std::vector<theta_field> data = {});
 	theta_field_matrix(mpl::matrix_size<std::size_t, std::size_t> sz);

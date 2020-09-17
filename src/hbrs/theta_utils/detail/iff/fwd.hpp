@@ -22,6 +22,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace detail {
 
+HBRS_THETA_UTILS_API
 bool
 iff(bool lhs, bool rhs);
 

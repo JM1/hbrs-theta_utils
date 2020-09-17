@@ -384,6 +384,7 @@ decompose_with_pca(
 
 /* unnamed namespace */ }
 
+HBRS_THETA_UTILS_API
 void
 execute(pca_cmd cmd) {
 	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(pca_cmd):begin";

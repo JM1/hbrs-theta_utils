@@ -25,7 +25,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace mpl = hbrs::mpl;
 
-struct nc_exception : public virtual mpl::exception {};
+struct HBRS_THETA_UTILS_API nc_exception : public virtual mpl::exception {};
 
 HBRS_THETA_UTILS_NAMESPACE_END
 

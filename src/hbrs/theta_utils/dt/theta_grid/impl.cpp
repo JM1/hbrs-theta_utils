@@ -209,8 +209,7 @@ int theta_grid::no_of_surfaceelements() const {
 	return points_of_surfacetriangles_.size() + points_of_surfacequadrilaterals_.size(); 
 }
 
-
-
+HBRS_THETA_UTILS_API
 boost::optional<theta_grid_path>
 find_theta_grid(
 	fs::path const& dir,
@@ -224,6 +223,7 @@ find_theta_grid(
 	}
 }
 
+HBRS_THETA_UTILS_API
 theta_grid
 read_theta_grid(theta_grid_path const& path) {
 	return { read_nc_cntr(path.full_path().string()) };

@@ -93,6 +93,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 # "CMake will generate tests only if the enable_testing() command has been invoked." [1]
 # "Note that ctest expects to find a test file in the build directory root. Therefore, this command should be in the 

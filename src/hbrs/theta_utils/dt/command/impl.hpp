@@ -24,24 +24,24 @@
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
-struct version_cmd {
+struct HBRS_THETA_UTILS_API version_cmd {
 	generic_options g_opts;
 	std::string version;
 };
 
-struct help_cmd {
+struct HBRS_THETA_UTILS_API help_cmd {
 	generic_options g_opts;
 	std::string help;
 };
 
-struct visualize_cmd {
+struct HBRS_THETA_UTILS_API visualize_cmd {
 	generic_options g_opts;
 	theta_input_options i_opts;
 	theta_output_options o_opts;
 	visualize_options v_opts;
 };
 
-struct pca_cmd {
+struct HBRS_THETA_UTILS_API pca_cmd {
 	generic_options g_opts;
 	theta_input_options i_opts;
 	theta_output_options o_opts;

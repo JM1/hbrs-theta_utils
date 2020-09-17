@@ -24,15 +24,19 @@
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
+HBRS_THETA_UTILS_API
 void
 execute(version_cmd);
 
+HBRS_THETA_UTILS_API
 void
 execute(help_cmd);
 
+HBRS_THETA_UTILS_API
 void
 execute(visualize_cmd cmd);
 
+HBRS_THETA_UTILS_API
 void
 execute(pca_cmd cmd);
 

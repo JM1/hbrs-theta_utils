@@ -86,6 +86,7 @@ struct to_impl<ext::std::vector_tag, From, when<
 #ifdef HBRS_MPL_ENABLE_MATLAB
 template<>
 struct to_impl<hbrs::mpl::ml_matrix_tag, hbrs::theta_utils::theta_field_matrix_tag> {
+	HBRS_THETA_UTILS_API
 	static hbrs::mpl::ml_matrix<double>
 	apply(hbrs::theta_utils::theta_field_matrix const& rhs);
 };
@@ -120,6 +121,7 @@ struct to_impl<ext::std::vector_tag, hbrs::mpl::el_dist_column_vector_tag> {
 
 template<>
 struct to_impl<hbrs::mpl::el_matrix_tag, hbrs::theta_utils::theta_field_matrix_tag> {
+	HBRS_THETA_UTILS_API
 	static hbrs::mpl::el_matrix<double>
 	apply(hbrs::theta_utils::theta_field_matrix const& rhs);
 };

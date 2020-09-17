@@ -41,6 +41,7 @@ struct gather_control {
 };
 
 #ifdef HBRS_MPL_ENABLE_ELEMENTAL
+HBRS_THETA_UTILS_API
 theta_field_matrix
 gather(
 	mpl::el_dist_matrix<
@@ -52,6 +53,7 @@ gather(
 	> const& ctrl
 );
 
+HBRS_THETA_UTILS_API
 theta_field_matrix
 gather(
 	mpl::el_dist_matrix<

@@ -28,7 +28,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
-struct nc_dimension {
+struct HBRS_THETA_UTILS_API nc_dimension {
 public:
 	nc_dimension(
 		std::string name,

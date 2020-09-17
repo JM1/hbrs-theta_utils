@@ -28,18 +28,18 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace mpl = hbrs::mpl;
 
-struct invalid_backend_exception : virtual mpl::exception {};
-struct ambiguous_domain_num_exception : virtual mpl::exception {};
-struct ambiguous_naming_scheme_exception : virtual mpl::exception {};
-struct domain_num_mismatch_exception : virtual mpl::exception {};
-struct mpi_not_initialized_exception : virtual mpl::exception {};
-struct unsupported_format_exception : virtual mpl::exception {};
-struct ambiguous_grid_exception : virtual mpl::exception {};
-struct invalid_number_range_spec_exception : virtual mpl::exception {};
-struct invalid_grid_exception : virtual mpl::exception {};
-struct vtk_exception : virtual mpl::exception {};
+struct HBRS_THETA_UTILS_API invalid_backend_exception : virtual mpl::exception {};
+struct HBRS_THETA_UTILS_API ambiguous_domain_num_exception : virtual mpl::exception {};
+struct HBRS_THETA_UTILS_API ambiguous_naming_scheme_exception : virtual mpl::exception {};
+struct HBRS_THETA_UTILS_API domain_num_mismatch_exception : virtual mpl::exception {};
+struct HBRS_THETA_UTILS_API mpi_not_initialized_exception : virtual mpl::exception {};
+struct HBRS_THETA_UTILS_API unsupported_format_exception : virtual mpl::exception {};
+struct HBRS_THETA_UTILS_API ambiguous_grid_exception : virtual mpl::exception {};
+struct HBRS_THETA_UTILS_API invalid_number_range_spec_exception : virtual mpl::exception {};
+struct HBRS_THETA_UTILS_API invalid_grid_exception : virtual mpl::exception {};
+struct HBRS_THETA_UTILS_API vtk_exception : virtual mpl::exception {};
 
-struct domain_num_mismatch_error_info {
+struct HBRS_THETA_UTILS_API domain_num_mismatch_error_info {
 	domain_num_mismatch_error_info(fs::path path, int expected, boost::optional<int> got);
 	
 	HBRS_THETA_UTILS_DECLARE_ATTR(path, fs::path)

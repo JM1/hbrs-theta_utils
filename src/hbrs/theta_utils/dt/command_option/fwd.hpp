@@ -38,11 +38,11 @@ constexpr auto elemental_openmp_backend_c = elemental_openmp_backend{};
 using elemental_mpi_backend = pca_backend_<pca_backend::elemental_mpi>;
 constexpr auto elemental_mpi_backend_c = elemental_mpi_backend{};
 
-struct generic_options;
-struct theta_input_options;
-struct theta_output_options;
-struct visualize_options;
-struct pca_options;
+struct HBRS_THETA_UTILS_API generic_options;
+struct HBRS_THETA_UTILS_API theta_input_options;
+struct HBRS_THETA_UTILS_API theta_output_options;
+struct HBRS_THETA_UTILS_API visualize_options;
+struct HBRS_THETA_UTILS_API pca_options;
 
 HBRS_THETA_UTILS_NAMESPACE_END
 

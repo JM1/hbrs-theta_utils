@@ -27,9 +27,10 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace fs = boost::filesystem;
 namespace detail {
 
-struct mpi_world_size_condition;
-struct temp_test_directory;
+struct HBRS_THETA_UTILS_API mpi_world_size_condition;
+struct HBRS_THETA_UTILS_API temp_test_directory;
 
+HBRS_THETA_UTILS_API
 std::vector<theta_field_path>
 make_theta_field_paths(
 	fs::path const& dir,

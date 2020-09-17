@@ -33,7 +33,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
-struct nc_cntr {
+struct HBRS_THETA_UTILS_API nc_cntr {
 public:
 	nc_cntr(
 		std::vector<nc_dimension> dims,

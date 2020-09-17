@@ -21,6 +21,7 @@
 
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 
+HBRS_THETA_UTILS_API
 void
 execute(version_cmd cmd) {
 	std::cout << cmd.version << std::endl;

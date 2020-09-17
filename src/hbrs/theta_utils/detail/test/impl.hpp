@@ -30,7 +30,7 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace fs = boost::filesystem;
 namespace detail {
 
-struct mpi_world_size_condition {
+struct HBRS_THETA_UTILS_API mpi_world_size_condition {
 	mpi_world_size_condition(boost::integer_range<std::size_t> supported);
 	
 	boost::test_tools::assertion_result
@@ -43,7 +43,7 @@ private:
 fs::path
 temp_test_path(fs::path base = fs::temp_directory_path());
 
-struct temp_test_directory {
+struct HBRS_THETA_UTILS_API temp_test_directory {
 	temp_test_directory(fs::path path = temp_test_path());
 	
 	virtual ~temp_test_directory();
@@ -55,7 +55,7 @@ private:
 	fs::path path_;
 };
 
-struct io_fixture {
+struct HBRS_THETA_UTILS_API io_fixture {
 	io_fixture(std::string tag);
 	
 	temp_test_directory const&

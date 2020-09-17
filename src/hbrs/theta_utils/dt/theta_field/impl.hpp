@@ -33,7 +33,7 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 namespace fs = boost::filesystem;
 
-struct theta_field_path {
+struct HBRS_THETA_UTILS_API theta_field_path {
 	struct timestamp {
 		typedef std::array<std::string, 2> significand_t;
 		timestamp(significand_t significand, std::string exponent);
@@ -89,7 +89,7 @@ struct theta_field_path {
 	HBRS_THETA_UTILS_DECLARE_ATTR(naming_scheme, enum naming_scheme)
 };
 
-struct theta_field {
+struct HBRS_THETA_UTILS_API theta_field {
 public:
 	theta_field(
 		std::vector<double> density,

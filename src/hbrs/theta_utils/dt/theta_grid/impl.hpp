@@ -31,7 +31,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
-struct theta_grid_path {
+struct HBRS_THETA_UTILS_API theta_grid_path {
 	theta_grid_path(fs::path folder, std::string prefix);
 	theta_grid_path(theta_grid_path const&) = default;
 	theta_grid_path(theta_grid_path &&) = default;
@@ -51,9 +51,8 @@ struct theta_grid_path {
 	HBRS_THETA_UTILS_DECLARE_ATTR(prefix, std::string)
 };
 
-struct theta_grid {
+struct HBRS_THETA_UTILS_API theta_grid {
 public:
-    
     //TODO: Support other cell types? e.g. https://vtk.org/doc/nightly/html/vtkCellType_8h.html
 	typedef std::array<int,4> tetraeder;
 	typedef std::array<int,6> prism;

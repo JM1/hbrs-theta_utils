@@ -203,6 +203,7 @@ HBRS_THETA_UTILS_DEFINE_ATTR(residual, std::vector<double>, theta_field)
 HBRS_THETA_UTILS_DEFINE_ATTR(global_id, std::vector<int>, theta_field)
 HBRS_THETA_UTILS_DEFINE_ATTR(ndomains, boost::optional<int>, theta_field)
 
+HBRS_THETA_UTILS_API
 theta_field
 read_theta_field(
 	std::string const& file_path,
@@ -322,6 +323,7 @@ parse_tau_field_path(fs::path file_path, std::string const& input_prefix) {
 
 /* unnamed namespace */ }
 
+HBRS_THETA_UTILS_API
 std::vector<theta_field_path>
 find_theta_fields(
 	fs::path const& dir,
@@ -359,6 +361,7 @@ find_theta_fields(
 	return field_files;
 }
 
+HBRS_THETA_UTILS_API
 std::vector<theta_field_path>
 filter_theta_fields_by_domain_num(
 	std::vector<theta_field_path> const& fields,
@@ -400,6 +403,7 @@ filter_theta_fields_by_domain_num(
 	return kept;
 }
 
+HBRS_THETA_UTILS_API
 std::vector<theta_field>
 read_theta_fields(
 	std::vector<theta_field_path> const& paths,
@@ -472,6 +476,7 @@ gen_nc_cntr(theta_field field) {
 
 /* unnamed namespace */ }
 
+HBRS_THETA_UTILS_API
 void
 write_theta_field(
 	theta_field field,
@@ -481,6 +486,7 @@ write_theta_field(
 	write_nc_cntr(gen_nc_cntr(std::move(field)), file_path, overwrite);
 }
 
+HBRS_THETA_UTILS_API
 void
 write_theta_fields(
 	std::vector< std::tuple<theta_field, theta_field_path> > fields,

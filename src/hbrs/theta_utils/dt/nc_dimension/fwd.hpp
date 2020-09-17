@@ -24,7 +24,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
-struct nc_dimension;
+struct HBRS_THETA_UTILS_API nc_dimension;
 struct nc_dimension_tag {};
 constexpr auto make_nc_dimension = hana::make<nc_dimension_tag>;
 constexpr auto to_nc_dimension = hana::to<nc_dimension_tag>;

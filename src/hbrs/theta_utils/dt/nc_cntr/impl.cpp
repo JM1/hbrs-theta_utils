@@ -108,6 +108,7 @@ throw_if_error(int ncid, int status, std::string path, bool close_fd) {
 
 /* unnamed namespace */ }
 
+HBRS_THETA_UTILS_API
 nc_cntr
 read_nc_cntr(
 	std::string const& path,
@@ -324,6 +325,7 @@ struct array_size_visitor : public boost::static_visitor<std::size_t> {
 	}
 };
 
+HBRS_THETA_UTILS_API
 void
 write_nc_cntr(
 	nc_cntr const& cntr,

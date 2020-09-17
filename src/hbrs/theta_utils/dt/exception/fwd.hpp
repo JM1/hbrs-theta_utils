@@ -30,25 +30,26 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 namespace fs = boost::filesystem;
 
-struct invalid_backend_exception;
-struct ambiguous_domain_num_exception;
-struct ambiguous_naming_scheme_exception;
-struct domain_num_mismatch_exception;
-struct mpi_not_initialized_exception;
-struct unsupported_format_exception;
-struct ambiguous_grid_exception;
-struct invalid_number_range_spec_exception;
-struct invalid_grid_exception;
-struct vtk_exception;
+struct HBRS_THETA_UTILS_API invalid_backend_exception;
+struct HBRS_THETA_UTILS_API ambiguous_domain_num_exception;
+struct HBRS_THETA_UTILS_API ambiguous_naming_scheme_exception;
+struct HBRS_THETA_UTILS_API domain_num_mismatch_exception;
+struct HBRS_THETA_UTILS_API mpi_not_initialized_exception;
+struct HBRS_THETA_UTILS_API unsupported_format_exception;
+struct HBRS_THETA_UTILS_API ambiguous_grid_exception;
+struct HBRS_THETA_UTILS_API invalid_number_range_spec_exception;
+struct HBRS_THETA_UTILS_API invalid_grid_exception;
+struct HBRS_THETA_UTILS_API vtk_exception;
 
 typedef boost::error_info<struct errinfo_ambiguous_field_paths_, std::tuple<fs::path, fs::path> > errinfo_ambiguous_field_paths;
-struct domain_num_mismatch_error_info;
+struct HBRS_THETA_UTILS_API domain_num_mismatch_error_info;
 typedef boost::error_info<struct errinfo_domain_num_mismatch_, domain_num_mismatch_error_info > errinfo_domain_num_mismatch;
 typedef boost::error_info<struct errinfo_vtk_file_format_, vtk_file_format> errinfo_vtk_file_format;
 typedef boost::error_info<struct errinfo_number_range_spec_, std::string> errinfo_number_range_spec;
 typedef boost::error_info<struct errinfo_vtk_error_, std::string> errinfo_vtk_error;
 typedef boost::error_info<struct errinfo_pca_backend_, pca_backend> errinfo_pca_backend;
 
+HBRS_THETA_UTILS_API
 std::string
 to_string(errinfo_ambiguous_field_paths e);
 

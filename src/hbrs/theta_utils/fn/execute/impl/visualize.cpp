@@ -33,6 +33,7 @@ HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace fs = boost::filesystem;
 namespace mpi = hbrs::mpl::detail::mpi;
 
+HBRS_THETA_UTILS_API
 void
 execute(visualize_cmd cmd) {
 	HBRS_MPL_LOG_TRIVIAL(debug) << "execute(visualize_cmd):begin";

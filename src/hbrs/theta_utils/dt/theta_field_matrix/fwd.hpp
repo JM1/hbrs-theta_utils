@@ -24,7 +24,7 @@
 HBRS_THETA_UTILS_NAMESPACE_BEGIN
 namespace hana = boost::hana;
 
-struct theta_field_matrix;
+struct HBRS_THETA_UTILS_API theta_field_matrix;
 struct theta_field_matrix_tag {};
 constexpr auto make_theta_field_matrix = hana::make<theta_field_matrix_tag>;
 constexpr auto to_theta_field_matrix = hana::to<theta_field_matrix_tag>;
