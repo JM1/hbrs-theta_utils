@@ -1,5 +1,4 @@
 # `hbrs-theta_utils`
-[![Build Status](https://travis-ci.com/JM1/hbrs-theta_utils.svg?branch=master)](https://travis-ci.com/JM1/hbrs-theta_utils)
 
 `hbrs-theta_utils` is a postprocessing tool to CFD solver [TAU (and THETA)](http://tau.dlr.de/) for data-driven modal decompositions.
 TAU is for numerical flow simulations, e.g. predicting flows around airfoils of wind turbines or aircrafts.
@@ -35,7 +34,7 @@ Then, for each simulated time step, the 3d velocity field and the grid are writt
 For that, the [Visualization Toolkit (VTK)](https://vtk.org/) is used to export the 3d geometry objects, their surfaces colored with 3d velocities, to [parallel unstructured grid (`*.pvtu`) files](https://www.vtk.org/VTK/img/file-formats.pdf).
 These `*.pvtu` files can then be opened and viewed in [ParaView](https://www.paraview.org/) or using [pvserver](https://www.paraview.org/Wiki/Setting_up_a_ParaView_Server) for distributed visualization on a cluster.
 
-All functionality is thoroughly being checked using [automated and extensive unit tests](https://travis-ci.com/JM1/hbrs-theta_utils/).
+All functionality is thoroughly being checked using automated and extensive unit tests.
 It has been applied to a real-world dataset, the airflows around a side mirror of a [car](https://www.aer.mw.tum.de/en/research-groups/automotive/drivaer/), utilizing 19 Mio. grid points, 1.000 time steps, 330GB simulation files, 600 MPI processes and 1.6TB of RAM.
 Its decompositions have been verified by scientists from DLR.
 
@@ -127,5 +126,3 @@ make -j$(nproc)
 ctest --output-on-failure
 make install
 ```
-
-For more examples how to build and test code see [`.travis.yml`](https://github.com/JM1/hbrs-theta_utils/blob/master/.travis.yml).
