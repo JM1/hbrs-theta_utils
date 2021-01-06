@@ -5,4 +5,7 @@
 # Ignore generated files
 build/
 
+# Ignore clangd cache
+.cache/
+
 !.gitignore
