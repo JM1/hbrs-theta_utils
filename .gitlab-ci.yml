@@ -7,6 +7,7 @@ variables:
   # The cache and install prefix paths must be relative to and reside inside the project directory ($CI_PROJECT_DIR),
   # because cache:paths and artifacts:paths do not support absolute paths or linking outside the project directory.
   # Ref.: https://docs.gitlab.com/ce/ci/yaml/README.html
+  BUILD_DIR: '$CI_PROJECT_DIR/build/${CC}-${CXX}-${BUILD_TYPE}'
   CCACHE_DIR: '$CI_PROJECT_DIR/.cache/ccache/${CC}-${CXX}-${BUILD_TYPE}'
   INSTALL_PREFIX: '$CI_PROJECT_DIR/.local/${CC}-${CXX}-${BUILD_TYPE}'
   # PATH variable cannot be set here
@@ -96,22 +97,22 @@ default:
     - export PATH=/usr/lib/ccache:$PATH
     - ccache -s
     - cd "$CI_PROJECT_DIR"
-    - if [ ! -e build ]; then mkdir build; fi
-    - cd build/
+    - if [ ! -e "$BUILD_DIR" ]; then mkdir -p "$BUILD_DIR"; fi
+    - cd "$BUILD_DIR"
     - >
       cmake \
         "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}" \
         "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}" \
         -DHBRS_THETA_UTILS_ENABLE_TESTS=ON \
         $CMAKE_VISIBILITY_OPTIONS \
-        .. || { cat CMakeFiles/CMakeError.log; exit 255; };
+        "$CI_PROJECT_DIR" || { cat CMakeFiles/CMakeError.log; exit 255; };
     - make "-j$(nproc)"
     - ccache -s
     - make install
 
 .test-linux: &test-linux
   script:
-    - cd "$CI_PROJECT_DIR/build"
+    - cd "$BUILD_DIR"
     - for i in $(seq 5); do ctest --output-on-failure || exit 255; done
 
 .matrix-gcc7-clang7: &matrix-gcc7-clang7
