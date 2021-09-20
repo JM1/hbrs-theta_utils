@@ -13,6 +13,12 @@ or [DMD][wiki-dmd], to extract relevant features. It also allows to export these
 visualization, e.g. with [ParaView][paraview]. It is designed operate in parallel on distributed large-scale datasets at
 HPC clusters like the [Platform for Scientific Computing at BRSU][hbrs-wr].
 
+:warning: **DEPRECATION NOTICE:**
+Apparently, this code meets the inevitable fate of many state-funded research projects. It has not been actively worked
+on since 2020. **Software consists of teams of people. If you want people to continue developing a project after it ceases
+to be their personal interest, fund them for it.**
+:warning:
+
 ## Under the hood
 
 `hbrs-theta_utils` is a CLI application written in [C++17][wiki-cpp17] and using [MPI][wiki-mpi] for distributed
